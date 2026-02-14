@@ -9,15 +9,17 @@ namespace IapDesktop.Application.Avalonia
     internal class AuthorizationAdapter : IAuthorization
     {
         private readonly IOidcSession session;
+        private readonly IDeviceEnrollment enrollment;
 
-        public AuthorizationAdapter(IOidcSession session)
+        public AuthorizationAdapter(IOidcSession session, IDeviceEnrollment enrollment)
         {
             this.session = session ?? throw new ArgumentNullException(nameof(session));
+            this.enrollment = enrollment ?? throw new ArgumentNullException(nameof(enrollment));
         }
 
         public IOidcSession Session => this.session;
 
-        public IDeviceEnrollment DeviceEnrollment => null!;
+        public IDeviceEnrollment DeviceEnrollment => this.enrollment;
 
         public event EventHandler? Reauthorized;
 

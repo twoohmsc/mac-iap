@@ -17,30 +17,36 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         private ProjectExplorerViewModel projectExplorer;
 
         [ObservableProperty]
-        private ObservableCollection<ConnectionViewModel> connections = new ObservableCollection<ConnectionViewModel>();
+        private ObservableCollection<ISessionViewModel> connections = new ObservableCollection<ISessionViewModel>();
 
         [ObservableProperty]
-        private ConnectionViewModel? selectedConnection;
+        private ISessionViewModel? selectedConnection;
 
         private readonly IAuthorization authorization;
         private readonly UserAgent userAgent;
         private readonly IapClient iapClient;
         private readonly Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore;
+        private readonly IapDesktop.Application.Avalonia.Services.IRdpConnectionService rdpService;
+        private readonly IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService;
 
         public MainViewModel(
             ComputeEngineClient computeClient,
             IAuthorization authorization,
             UserAgent userAgent,
-            Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore)
+            Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore,
+            IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService)
         {
             this.authorization = authorization;
             this.userAgent = userAgent;
             this.keyStore = keyStore;
+            this.sshKeyService = sshKeyService;
 
             this.iapClient = new IapClient(
                 IapClient.CreateEndpoint(),
                 authorization,
                 userAgent);
+            
+            this.rdpService = new IapDesktop.Application.Avalonia.Services.RdpConnectionService();
 
             ProjectExplorer = new ProjectExplorerViewModel(this, computeClient, authorization, userAgent);
         }
@@ -48,12 +54,27 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         public void OpenConnection(InstanceLocator instance)
         {
             // Create a new connection tab
-            var vm = new ConnectionViewModel(instance, iapClient, authorization, keyStore);
+            var vm = new ConnectionViewModel(instance, iapClient, authorization, keyStore, sshKeyService);
             Connections.Add(vm);
             SelectedConnection = vm;
             
             // Start connection
-            // Fire and forget for now, but should be tracked
+            _ = vm.ConnectAsync();
+        }
+
+        public void OpenRdpSession(InstanceLocator instance)
+        {
+            var vm = new RdpSessionViewModel(instance, iapClient, rdpService, authorization);
+            Connections.Add(vm);
+            SelectedConnection = vm;
+            _ = vm.ConnectAsync();
+        }
+
+        public void OpenSftpSession(InstanceLocator instance)
+        {
+            var vm = new SftpBrowserViewModel(instance, iapClient, authorization, keyStore, sshKeyService);
+            Connections.Add(vm);
+            SelectedConnection = vm;
             _ = vm.ConnectAsync();
         }
 
@@ -61,6 +82,8 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         {
             // Design-time
             ProjectExplorer = new ProjectExplorerViewModel();
+            this.rdpService = new IapDesktop.Application.Avalonia.Services.RdpConnectionService();
+            this.sshKeyService = new IapDesktop.Application.Avalonia.Services.Ssh.SshKeyService(null!, null!, null!);
         }
 
         [ObservableProperty]

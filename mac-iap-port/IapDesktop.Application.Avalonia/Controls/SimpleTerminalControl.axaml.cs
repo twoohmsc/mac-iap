@@ -14,6 +14,7 @@ namespace IapDesktop.Application.Avalonia.Controls
 
         
         public event EventHandler<string>? UserInput;
+        public event EventHandler<(ushort columns, ushort rows)>? TerminalResized;
 
         public SimpleTerminalControl()
         {
@@ -25,6 +26,28 @@ namespace IapDesktop.Application.Avalonia.Controls
             // Handle input
             OutputEditor.KeyDown += OutputEditor_KeyDown;
             OutputEditor.TextInput += OutputEditor_TextInput;
+            OutputEditor.SizeChanged += OutputEditor_SizeChanged;
+        }
+
+        private void OutputEditor_SizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+             var textView = OutputEditor.TextArea.TextView;
+             if (textView != null && textView.DefaultLineHeight > 0 && textView.WideSpaceWidth > 0)
+             {
+                double w = e.NewSize.Width > 0 ? e.NewSize.Width : OutputEditor.Bounds.Width;
+                double h = e.NewSize.Height > 0 ? e.NewSize.Height : OutputEditor.Bounds.Height;
+
+                if (w > 0 && h > 0)
+                {
+                    int cols = (int)(w / textView.WideSpaceWidth);
+                    int rows = (int)(h / textView.DefaultLineHeight);
+                    
+                    if (cols > 0 && rows > 0)
+                    {
+                        TerminalResized?.Invoke(this, ((ushort)cols, (ushort)rows));
+                    }
+                }
+             }
         }
 
         private void OutputEditor_TextInput(object? sender, TextInputEventArgs e)
@@ -82,6 +105,14 @@ namespace IapDesktop.Application.Avalonia.Controls
                 case Key.Delete:
                     sequence = "\x1b[3~";
                     break;
+                case Key.V:
+                    if (e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta))
+                    {
+                        HandlePasteAsync();
+                        e.Handled = true;
+                        return;
+                    }
+                    break;
             }
 
             if (sequence != null)
@@ -115,6 +146,26 @@ namespace IapDesktop.Application.Avalonia.Controls
             {
                 OutputEditor.Document.Text = "";
             });
+        }
+
+        private async void HandlePasteAsync()
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel?.Clipboard != null)
+            {
+                try 
+                {
+                    var text = await topLevel.Clipboard.GetTextAsync();
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        UserInput?.Invoke(this, text);
+                    }
+                }
+                catch (Exception) 
+                { 
+                    // Ignore clipboard errors
+                }
+            }
         }
     }
 }

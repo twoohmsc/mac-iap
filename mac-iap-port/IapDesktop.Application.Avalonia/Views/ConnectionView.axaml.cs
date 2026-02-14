@@ -14,6 +14,15 @@ namespace IapDesktop.Application.Avalonia.Views
             InitializeComponent();
             DataContextChanged += OnDataContextChanged;
             Terminal.UserInput += OnTerminalUserInput;
+            Terminal.TerminalResized += OnTerminalResized;
+        }
+
+        private void OnTerminalResized(object? sender, (ushort cols, ushort rows) e)
+        {
+            if (viewModel != null)
+            {
+                _ = viewModel.ResizeTerminalAsync(e.cols, e.rows);
+            }
         }
 
         private void OnTerminalUserInput(object? sender, string input)

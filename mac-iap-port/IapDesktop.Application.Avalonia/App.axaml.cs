@@ -62,8 +62,9 @@ namespace IapDesktop.Application.Avalonia
                         //
                         // Fallback: Use Application Default Credentials (gcloud)
                         //
-                        Console.WriteLine("Using Application Default Credentials (gcloud)...");
+                        Console.WriteLine("DEBUG: Using Application Default Credentials (gcloud)...");
                         var gcloudCredential = await GoogleCredential.GetApplicationDefaultAsync();
+                        Console.WriteLine("DEBUG: Got gcloud credential");
                         if (gcloudCredential.IsCreateScopedRequired)
                         {
                             gcloudCredential = gcloudCredential.CreateScoped(
@@ -104,17 +105,31 @@ namespace IapDesktop.Application.Avalonia
                             CancellationToken.None);
                     }
                     
-                    var authorization = new AuthorizationAdapter(session);
+                    var authorization = new AuthorizationAdapter(session, enrollment);
                     
                     var computeClient = new ComputeEngineClient(
                         ComputeEngineClient.CreateEndpoint(),
                         authorization,
                         userAgent);
 
-                    desktop.MainWindow = new MainWindow
+                    var osLoginClient = new OsLoginClient(
+                        OsLoginClient.CreateEndpoint(),
+                        authorization,
+                        userAgent);
+
+                    var sshKeyService = new IapDesktop.Application.Avalonia.Services.Ssh.SshKeyService(
+                        authorization,
+                        computeClient,
+                        osLoginClient);
+
+                    Console.WriteLine("DEBUG: Creating MainWindow...");
+                    var mainWindow = new MainWindow
                     {
-                        DataContext = new ViewModels.MainViewModel(computeClient, authorization, userAgent, keyStore)
+                        DataContext = new ViewModels.MainViewModel(computeClient, authorization, userAgent, keyStore, sshKeyService)
                     };
+                    desktop.MainWindow = mainWindow;
+                    mainWindow.Show();
+                    Console.WriteLine("DEBUG: MainWindow showed.");
                 }
                 catch (Exception e)
                 {

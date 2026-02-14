@@ -7,6 +7,7 @@ using Google.Solutions.Apis.Locator;
 using Google.Solutions.Iap;
 using Google.Solutions.Iap.Net;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,12 +17,15 @@ namespace IapDesktop.Application.Avalonia.ViewModels
     public partial class ProjectExplorerViewModel : ObservableObject
     {
         [ObservableProperty]
-        private ObservableCollection<string> nodes = new ObservableCollection<string>();
+        private ObservableCollection<ProjectExplorerNode> rootNodes = new ObservableCollection<ProjectExplorerNode>();
 
         private readonly ComputeEngineClient computeClient;
         private readonly MainViewModel mainViewModel;
         private readonly IAuthorization authorization;
         private readonly UserAgent userAgent;
+        
+        [ObservableProperty]
+        private ProjectExplorerNode? selectedNode;
 
         public ProjectExplorerViewModel(
             MainViewModel mainViewModel, 
@@ -40,43 +44,76 @@ namespace IapDesktop.Application.Avalonia.ViewModels
              // Design-time constructor
         }
 
-        [ObservableProperty]
-        private string? selectedNode;
-
         [RelayCommand]
         private async Task Connect()
         {
-             if (SelectedNode == null || CurrentProjectId == null) return;
-            
-             var parts = SelectedNode.Split(new[] { '(', ')' }, System.StringSplitOptions.RemoveEmptyEntries);
-             if (parts.Length < 2) return;
+             if (SelectedNode is InstanceNode instanceNode)
+             {
+                 mainViewModel.OpenConnection(instanceNode.Instance);
+             }
+        }
 
-             var instanceName = parts[0].Trim();
-             var zone = parts[1].Trim();
-             
-             var locator = new InstanceLocator(CurrentProjectId, zone, instanceName);
-             mainViewModel.OpenConnection(locator);
+        [RelayCommand]
+        private async Task ConnectRdp()
+        {
+             if (SelectedNode is InstanceNode instanceNode)
+             {
+                 mainViewModel.OpenRdpSession(instanceNode.Instance);
+             }
+        }
+
+        [RelayCommand]
+        private async Task ConnectSftp()
+        {
+             if (SelectedNode is InstanceNode instanceNode)
+             {
+                 mainViewModel.OpenSftpSession(instanceNode.Instance);
+             }
         }
 
         [RelayCommand]
         private async Task LoadNodes(string projectId)
         {
              CurrentProjectId = projectId;
-             Nodes.Clear();
+             RootNodes.Clear();
+             
              try
              {
+                 // Create root Project Node
+                 var projectNode = new ProjectNode(projectId);
+                 RootNodes.Add(projectNode);
+
                  var instances = await computeClient.ListInstancesAsync(
                      new ProjectLocator(projectId), 
                      CancellationToken.None);
                  
-                 foreach (var instance in instances)
+                 // Group by Zone
+                 var zoneGroups = instances.GroupBy(i => i.Zone);
+
+                 foreach (var zoneGroup in zoneGroups)
                  {
-                     Nodes.Add($"{instance.Name} ({instance.Zone.Substring(instance.Zone.LastIndexOf('/') + 1)})");
+                     // Extract zone name from full URL or partial URL
+                     var zoneId = zoneGroup.Key.Contains('/') 
+                        ? zoneGroup.Key.Substring(zoneGroup.Key.LastIndexOf('/') + 1)
+                        : zoneGroup.Key;
+
+                     var zoneNode = new ZoneNode(projectId, zoneId);
+                     projectNode.Children.Add(zoneNode);
+
+                     foreach (var instance in zoneGroup)
+                     {
+                         // Determine OS icon if possible (or default)
+                         var instanceLocator = new InstanceLocator(projectId, zoneId, instance.Name);
+                         var instanceNode = new InstanceNode(instanceLocator);
+                         zoneNode.Children.Add(instanceNode);
+                     }
                  }
              }
              catch (System.Exception ex)
              {
-                 Nodes.Add($"Error: {ex.Message}");
+                 // Add error node
+                 RootNodes.Clear();
+                 RootNodes.Add(new ProjectNode($"Error: {ex.Message}"));
              }
         }
 

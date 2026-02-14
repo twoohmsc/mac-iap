@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:IapDesktop.Application.Avalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="IapDesktop.Application.Avalonia.Views.SftpBrowserView"
+             x:DataType="vm:SftpBrowserViewModel">
+
+    <Grid RowDefinitions="Auto, *">
+        <!-- Toolbar -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="10">
+            <Button Content="Up" Command="{Binding NavigateUpCommand}"/>
+            <Button Content="Refresh" Command="{Binding RefreshCommand}"/>
+            <TextBox Text="{Binding CurrentPath}" Width="400" IsReadOnly="True" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Margin="10,0"/>
+        </StackPanel>
+
+        <!-- File List -->
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Files}" 
+                  SelectedItem="{Binding SelectedFile}"
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True"
+                  GridLinesVisibility="All"
+                  BorderThickness="1" BorderBrush="Gray">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="100"/>
+                <DataGridTextColumn Header="Modified" Binding="{Binding LastModifiedDate}" Width="150"/>
+                <DataGridTextColumn Header="Permissions" Binding="{Binding Permissions}" Width="150"/>
+            </DataGrid.Columns>
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Download" Command="{Binding DownloadCommand}"/>
+                    <MenuItem Header="Upload" Command="{Binding UploadCommand}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+        </DataGrid>
+    </Grid>
+</UserControl>

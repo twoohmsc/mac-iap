@@ -14,6 +14,7 @@
     <Compile Include="..\..\sources\Google.Solutions.Ssh\**\*.cs" />
     <Compile Remove="..\..\sources\Google.Solutions.Ssh\Native\NativeMethods.cs" />
     <Compile Remove="..\..\sources\Google.Solutions.Ssh\SshWorkerThread.cs" />
+    <Compile Remove="..\..\sources\Google.Solutions.Ssh\SshConnection.cs" />
     <Compile Remove="..\..\sources\Google.Solutions.Ssh\bin\**" />
     <Compile Remove="..\..\sources\Google.Solutions.Ssh\obj\**" />
   </ItemGroup>

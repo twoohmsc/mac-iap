@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:IapDesktop.Application.Avalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="IapDesktop.Application.Avalonia.Views.RdpSessionView"
+             x:DataType="vm:RdpSessionViewModel">
+
+    <Grid RowDefinitions="*,Auto" Margin="20">
+        <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="20">
+            <TextBlock Text="{Binding Title}" 
+                       Theme="{StaticResource SubtitleTextBlockStyle}" 
+                       HorizontalAlignment="Center"/>
+            
+            <TextBlock Text="RDP Session Active" 
+                       FontSize="24" 
+                       FontWeight="SemiBold" 
+                       HorizontalAlignment="Center"
+                       IsVisible="{Binding IsConnected}"/>
+
+            <TextBlock Text="{Binding StatusText}" 
+                       TextWrapping="Wrap" 
+                       HorizontalAlignment="Center" 
+                       TextAlignment="Center"/>
+            
+            <ProgressBar IsIndeterminate="True" 
+                         IsVisible="{Binding IsConnected}"
+                         MaxWidth="200"/>
+
+            <Button Content="Disconnect" 
+                    Command="{Binding DisconnectCommand}"
+                    HorizontalAlignment="Center"
+                    Classes="accent"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

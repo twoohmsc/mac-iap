@@ -16,12 +16,13 @@ using System.Threading.Tasks;
 
 namespace IapDesktop.Application.Avalonia.ViewModels
 {
-    public partial class ConnectionViewModel : ObservableObject, IDisposable
+    public partial class ConnectionViewModel : ObservableObject, ISessionViewModel
     {
         private readonly InstanceLocator instance;
         private readonly IapClient iapClient;
         private readonly IAuthorization authorization;
         private readonly Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore;
+        private readonly IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService;
         
         [ObservableProperty]
         private string title;
@@ -35,26 +36,27 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         public event EventHandler<string>? OutputReceived;
         public event EventHandler<string>? ConnectionError;
 
-        private Libssh2Session? session;
-        private Libssh2ShellChannel? channel;
+        private IapDesktop.Application.Avalonia.Services.TerminalSshWorker? worker;
 
         public ConnectionViewModel(
             InstanceLocator instance,
             IapClient iapClient,
             IAuthorization authorization,
-            Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore)
+            Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore,
+            IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService)
         {
             this.instance = instance;
             this.iapClient = iapClient;
             this.authorization = authorization;
             this.keyStore = keyStore;
+            this.sshKeyService = sshKeyService;
             this.Title = instance.Name;
             this.StatusText = "Initializing...";
         }
 
         public async Task ConnectAsync()
         {
-            await Task.Run(() =>
+            await Task.Run(async () =>
             {
                 try
                 {
@@ -78,14 +80,12 @@ namespace IapDesktop.Application.Avalonia.ViewModels
                     StatusText = $"IAP tunnel listening on {listener.LocalEndpoint}";
 
                     // 2. Load Credential from Keychain
-                    ISshCredential credential;
+                    KeychainSshCredential credential;
                     try
                     {
-                        // Extract username from email (e.g., user@example.com -> user)
                         var email = authorization.Session.Username;
                         var username = email.Split('@')[0].ToLowerInvariant();
                         
-                        // Use RSA 3072-bit key (standard for SSH)
                         var keyType = new Google.Solutions.Platform.Security.Cryptography.KeyType(
                             System.Security.Cryptography.CngAlgorithm.Rsa, 
                             3072);
@@ -106,33 +106,46 @@ namespace IapDesktop.Application.Avalonia.ViewModels
                         throw new Exception($"Failed to initialize SSH credential from Keychain: {ex.Message}", ex);
                     }
 
-                    // 3. Establish SSH Session
-                    StatusText += "\nEstablishing SSH session...";
-                    
-                    this.session = new Libssh2Session();
-                    
-                    // Connect to the local IAP endpoint
-                    var connectedSession = this.session.Connect(listener.LocalEndpoint);
-                    
-                    // Authenticate
-                    var authenticatedSession = connectedSession.Authenticate(
-                        credential,
-                        new GuiKeyboardInteractiveHandler());
-                    
-                    StatusText += "\nOpening shell channel...";
-                    
-                    // Open Shell Channel
-                    this.channel = authenticatedSession.OpenShellChannel(
-                        LIBSSH2_CHANNEL_EXTENDED_DATA.MERGE,
-                        "xterm",
-                        80,
-                        24);
-                        
-                    StatusText = "Connected.";
-                    IsConnected = true;
+                    // 3. Authorize Key (Push to Metadata/OS Login)
+                    StatusText += "\nAuthorizing SSH key...";
+                    try
+                    {
+                        await sshKeyService.AuthorizeKeyAsync(
+                            instance,
+                            credential.Signer,
+                            TimeSpan.FromMinutes(10),
+                            CancellationToken.None);
+                         StatusText += "\nKey authorized successfully.";
+                    }
+                    catch (Exception ex)
+                    {
+                         StatusText += $"\nKey authorization failed: {ex.Message}";
+                         throw new Exception($"Failed to authorize SSH key: {ex.Message}", ex);
+                    }
 
-                    // 4. Start Output Loop
-                    _ = ReadOutputAsync();
+                    // 4. Establish SSH Session using TerminalSshWorker
+                    StatusText += "\nConnecting to SSH...";
+                    
+                    this.worker = new IapDesktop.Application.Avalonia.Services.TerminalSshWorker(
+                        listener.LocalEndpoint,
+                        credential,
+                        new IapDesktop.Application.Avalonia.Services.GuiKeyboardInteractiveHandler());
+                    
+                    this.worker.ReceiveData += (s, data) => OnOutputReceived(data);
+                    this.worker.Error += (s, ex) => 
+                    {
+                        OnOutputReceived($"\nSSH Error: {ex.Message}\n");
+                        ConnectionError?.Invoke(this, ex.Message);
+                        StatusText = $"Error: {ex.Message}";
+                        IsConnected = false;
+                    };
+                    this.worker.Connected += (s, e) =>
+                    {
+                         StatusText = "Connected via SSH Worker.";
+                         IsConnected = true;
+                    };
+
+                    this.worker.Connect();
                 }
                 catch (Exception ex)
                 {
@@ -143,51 +156,18 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             });
         }
 
-        private async Task ReadOutputAsync()
-        {
-            try
-            {
-                var buffer = new byte[1024];
-                while (channel != null && IsConnected)
-                {
-                    // Wrap synchronous Read in Task.Run to avoid blocking UI
-                    var read = await Task.Run(() => channel.Read(buffer));
-                    if (read == 0) 
-                    {
-                        // No data available, wait a bit
-                        await Task.Delay(10);
-                        continue;
-                    }
-                    
-                    var text = Encoding.UTF8.GetString(buffer, 0, (int)read);
-                    OnOutputReceived(text);
-                }
-            }
-            catch (Exception ex)
-            {
-                OnOutputReceived($"\nRead error: {ex.Message}\n");
-            }
-            finally
-            {
-                IsConnected = false;
-                StatusText = "Disconnected.";
-            }
-        }
+        // ReadOutputAsync is no longer needed as the worker handles it via events.
 
         public async Task SendInputAsync(string input)
         {
-            if (!IsConnected || channel == null) return;
+            if (!IsConnected || worker == null) return;
+            await worker.SendAsync(input);
+        }
 
-            try
-            {
-                var data = Encoding.UTF8.GetBytes(input);
-                // Wrap synchronous Write in Task.Run
-                await Task.Run(() => channel.Write(data));
-            }
-            catch (Exception ex)
-            {
-                OnOutputReceived($"\nWrite error: {ex.Message}\n");
-            }
+        public async Task ResizeTerminalAsync(ushort columns, ushort rows)
+        {
+            if (!IsConnected || worker == null) return;
+            await worker.ResizeTerminalAsync(columns, rows);
         }
 
         private void OnOutputReceived(string text)
@@ -197,8 +177,7 @@ namespace IapDesktop.Application.Avalonia.ViewModels
 
         public void Dispose()
         {
-            session?.Dispose();
-            channel?.Dispose();
+            worker?.Dispose();
         }
 
         private class AllowAllPolicy : IIapListenerPolicy
@@ -206,20 +185,6 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             public bool IsClientAllowed(IPEndPoint remote) => true;
         }
 
-        private class GuiKeyboardInteractiveHandler : IKeyboardInteractiveHandler
-        {
-            public string? Prompt(string caption, string instruction, string prompt, bool echo)
-            {
-                // For now, just log and return null or empty? 
-                // In a real GUI, we would show a dialog.
-                System.Diagnostics.Debug.WriteLine($"[SSH Prompt] {caption}: {instruction} ({prompt})");
-                return null;
-            }
 
-            public IPasswordCredential PromptForCredentials(string username)
-            {
-                throw new NotImplementedException("Password authentication is not yet supported in the GUI.");
-            }
-        }
     }
 }
