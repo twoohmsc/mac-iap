@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>Google.Solutions.Common</AssemblyTitle>
+    <Company>Google LLC</Company>
+    <Product>IAP Desktop</Product>
+    <Copyright>Copyright 2019-2024 Google LLC</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\sources\Google.Solutions.Common\**\*.cs" />
+    <Compile Remove="..\..\sources\Google.Solutions.Common\obj\**" />
+    <Compile Remove="..\..\sources\Google.Solutions.Common\bin\**" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>Google.Solutions.Ssh</AssemblyTitle>
+    <Company>Google LLC</Company>
+    <Product>IAP Desktop</Product>
+    <Copyright>Copyright 2019-2024 Google LLC</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\sources\Google.Solutions.Ssh\**\*.cs" />
+    <Compile Remove="..\..\sources\Google.Solutions.Ssh\Native\NativeMethods.cs" />
+    <Compile Remove="..\..\sources\Google.Solutions.Ssh\SshWorkerThread.cs" />
+    <Compile Remove="..\..\sources\Google.Solutions.Ssh\bin\**" />
+    <Compile Remove="..\..\sources\Google.Solutions.Ssh\obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Google.Solutions.Common\Google.Solutions.Common.csproj" />
+    <ProjectReference Include="..\Google.Solutions.Apis\Google.Solutions.Apis.csproj" />
+    <ProjectReference Include="..\Google.Solutions.Platform\Google.Solutions.Platform.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Core" Version="1.73.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+</Project>

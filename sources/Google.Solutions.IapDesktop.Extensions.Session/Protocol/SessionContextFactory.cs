@@ -311,12 +311,11 @@ namespace Google.Solutions.IapDesktop.Extensions.Session.Protocol
                 if (sshSettings.UsePersistentKey.Value)
                 {
                     //
-                    // Load persistent CNG key. This might pop up dialogs.
+                    // Load persistent key. This might pop up dialogs.
                     //
                     var keyName = new CngKeyName(
                         this.authorization.Session,
-                        sshSettings.PublicKeyType.Value,
-                        this.keyStore.Provider);
+                        sshSettings.PublicKeyType.Value);
 
                     try
                     {

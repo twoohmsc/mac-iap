@@ -1,5 +1,5 @@
 ﻿//
-// Copyright 2019 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
@@ -19,31 +19,34 @@
 // under the License.
 //
 
-using System;
-using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
-namespace Google.Solutions.Apis.Diagnostics
+namespace Google.Solutions.Platform.Security.Cryptography
 {
-    public interface IHelpTopic
+    /// <summary>
+    /// A key type.
+    /// </summary>
+    public readonly struct KeyType
     {
-        string Title { get; }
-        Uri Address { get; }
-    }
-
-    public interface IExceptionWithHelpTopic
-    {
-        IHelpTopic? Help { get; }
-    }
-
-    public class HelpTopic : IHelpTopic
-    {
-        public string Title { get; }
-        public Uri Address { get; }
-
-        public HelpTopic(string title, string address)
+        public KeyType(CngAlgorithm algorithm, ushort size)
         {
-            this.Title = title;
-            this.Address = new Uri(address);
+            this.Algorithm = algorithm;
+            this.Size = size;
+        }
+
+        /// <summary>
+        /// Algorithm to use.
+        /// </summary>
+        public CngAlgorithm Algorithm { get; }
+
+        /// <summary>
+        /// Key size to use.
+        /// </summary>
+        public ushort Size { get; }
+
+        public override string ToString()
+        {
+            return $"{this.Algorithm.Algorithm} ({this.Size} bit)";
         }
     }
 }

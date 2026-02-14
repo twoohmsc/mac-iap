@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:avaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="IapDesktop.Application.Avalonia.Controls.SimpleTerminalControl">
+    <Grid>
+        <avaloniaEdit:TextEditor Name="OutputEditor"
+                                 FontFamily="Cascadia Code,Consolas,Monospace,Menlo"
+                                 FontSize="12"
+                                 IsReadOnly="True"
+                                 ShowLineNumbers="False"
+                                 Background="#1E1E1E"
+                                 Foreground="#D4D4D4"
+                                 WordWrap="True"
+                                 HorizontalScrollBarVisibility="Disabled"
+                                 VerticalScrollBarVisibility="Auto"/>
+        
+        <!-- Input Overlay/Line handling logic will be in code-behind for simplicity -->
+    </Grid>
+</UserControl>

@@ -36,7 +36,7 @@ namespace Google.Solutions.Ssh.Native
     /// <summary>
     /// An (unconnected) Libssh2 session.
     /// </summary>
-    internal class Libssh2Session : IDisposable
+    public class Libssh2Session : IDisposable
     {
         private const string BannerPrefix = "SSH-2.0-";
         private const ushort MaxKexAttempts = 3;
@@ -87,7 +87,7 @@ namespace Google.Solutions.Ssh.Native
             }
         }
 
-        internal Libssh2Session()
+        public Libssh2Session()
         {
             //
             // Use blocking I/O by default.

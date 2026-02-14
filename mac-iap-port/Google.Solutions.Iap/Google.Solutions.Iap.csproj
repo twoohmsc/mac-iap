@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>Google.Solutions.Iap</AssemblyTitle>
+    <Company>Google LLC</Company>
+    <Product>IAP Desktop</Product>
+    <Copyright>Copyright 2019-2024 Google LLC</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\sources\Google.Solutions.Iap\**\*.cs" />
+    <Compile Remove="..\..\sources\Google.Solutions.Iap\obj\**" />
+    <Compile Remove="..\..\sources\Google.Solutions.Iap\bin\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Google.Solutions.Apis\Google.Solutions.Apis.csproj" />
+    <ProjectReference Include="..\Google.Solutions.Common\Google.Solutions.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis" Version="1.73.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.73.0" />
+    <PackageReference Include="Google.Apis.Compute.v1" Version="1.73.0.4039" />
+    <PackageReference Include="Google.Apis.Core" Version="1.73.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+</Project>

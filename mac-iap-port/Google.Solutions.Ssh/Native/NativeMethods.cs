@@ -104,6 +104,8 @@ namespace Google.Solutions.Ssh.Native
         ILLEGAL_USER_NAME = 15
     }
 
+
+
     public enum LIBSSH2_STREAM : Int32
     {
         NORMAL = 0,
@@ -134,7 +136,7 @@ namespace Google.Solutions.Ssh.Native
 
     internal static class NativeMethods
     {
-        private const string Libssh2 = "libssh2.dll";
+        private const string Libssh2 = "libssh2";
 
         [DllImport(Libssh2, CallingConvention = CallingConvention.Cdecl)]
         internal static extern Int32 libssh2_init(Int32 flags);
@@ -587,64 +589,7 @@ namespace Google.Solutions.Ssh.Native
             IntPtr context,
             TraceHandler? callback);
 
-        //---------------------------------------------------------------------
-        // Winsock.
-        //---------------------------------------------------------------------
 
-        internal const uint WSA_WAIT_FAILED = 0xFFFFFFFF;
-        internal const uint WSA_WAIT_EVENT_0 = 0;
-        internal const uint WSA_WAIT_TIMEOUT = 0x102;
-        internal const uint FD_READ = 1;
-        internal const uint FD_WRITE = 2;
-        internal const uint FD_OOB = 4;
-        internal const uint FD_ACCEPT = 8;
-        internal const uint FD_CONNECT = 16;
-        internal const uint FD_CLOSE = 32;
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern WsaEventHandle WSACreateEvent();
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern int WSAEventSelect(
-            IntPtr socket,
-            WsaEventHandle hande,
-            uint eventMask);
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern bool WSASetEvent(WsaEventHandle hande);
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern bool WSAResetEvent(WsaEventHandle hande);
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern bool WSACloseEvent(IntPtr hande);
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern uint WSAWaitForMultipleEvents(
-            uint cEvents,
-            IntPtr[] pEvents,
-            bool fWaitAll,
-            uint timeout,
-            bool fAlterable);
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern int WSAEnumNetworkEvents(
-            IntPtr socket,
-            WsaEventHandle eventHandle,
-            ref WSANETWORKEVENTS eventInfo);
-
-        [DllImport("Ws2_32.dll")]
-        internal static extern int WSAGetLastError();
-
-
-        [StructLayout(LayoutKind.Sequential)]
-        internal struct WSANETWORKEVENTS
-        {
-            internal int lNetworkEvents;
-
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 10)]
-            internal int[] iErrorCode;
-        }
 
         //---------------------------------------------------------------------
         // Utility functions.
@@ -870,18 +815,5 @@ namespace Google.Solutions.Ssh.Native
         }
     }
 
-    internal class WsaEventHandle : SafeHandleZeroOrMinusOneIsInvalid
-    {
-        private WsaEventHandle() : base(true)
-        {
-        }
 
-        [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
-        protected override bool ReleaseHandle()
-        {
-            var result = NativeMethods.WSACloseEvent(this.handle);
-            Debug.Assert(result);
-            return result;
-        }
-    }
 }

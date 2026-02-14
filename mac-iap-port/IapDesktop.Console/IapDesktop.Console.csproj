@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyTitle>IapDesktop.Console</AssemblyTitle>
+    <Company>Google LLC</Company>
+    <Product>IAP Desktop</Product>
+    <Copyright>Copyright 2019-2024 Google LLC</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Google.Solutions.Common\Google.Solutions.Common.csproj" />
+    <ProjectReference Include="..\Google.Solutions.Apis\Google.Solutions.Apis.csproj" />
+    <ProjectReference Include="..\Google.Solutions.Iap\Google.Solutions.Iap.csproj" />
+    <ProjectReference Include="..\Google.Solutions.Ssh\Google.Solutions.Ssh.csproj" />
+    <ProjectReference Include="..\Google.Solutions.Platform\Google.Solutions.Platform.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+
+</Project>

@@ -30,7 +30,7 @@ namespace Google.Solutions.Ssh.Native
     /// <summary>
     /// An connected and authenticated Libssh2 session.
     /// </summary>
-    internal class Libssh2AuthenticatedSession : IDisposable
+    public class Libssh2AuthenticatedSession : IDisposable
     {
         // NB. This object does not own this handle and should not dispose it.
         internal Libssh2Session Session { get; }
@@ -132,7 +132,7 @@ namespace Google.Solutions.Ssh.Native
         /// <summary>
         /// Start an interactive shell.
         /// </summary>
-        internal Libssh2ShellChannel OpenShellChannel(
+        public Libssh2ShellChannel OpenShellChannel(
             LIBSSH2_CHANNEL_EXTENDED_DATA mode,
             string term,
             ushort widthInChars,
@@ -199,6 +199,52 @@ namespace Google.Solutions.Ssh.Native
                 }
 
                 SshEventSource.Log.ShellChannelOpened(term);
+
+                return new Libssh2ShellChannel(this.Session, channelHandle);
+            }
+        }
+
+        public Libssh2ShellChannel OpenExecChannel(
+            string command,
+            LIBSSH2_CHANNEL_EXTENDED_DATA mode = LIBSSH2_CHANNEL_EXTENDED_DATA.MERGE,
+            IEnumerable<EnvironmentVariable>? environmentVariables = null)
+        {
+            this.Session.Handle.CheckCurrentThreadOwnsHandle();
+            Precondition.ExpectNotNull(command, nameof(command));
+
+            using (SshTraceSource.Log.TraceMethod().WithParameters(command))
+            {
+                var channelHandle = OpenChannelInternal(mode);
+
+                if (environmentVariables != null)
+                {
+                    foreach (var environmentVariable in environmentVariables
+                        .Where(i => !string.IsNullOrEmpty(i.Value)))
+                    {
+                        SetEnvironmentVariable(
+                            channelHandle,
+                            environmentVariable);
+                    }
+                }
+
+                //
+                // Launch the command.
+                //
+                var request = "exec";
+                var result = (LIBSSH2_ERROR)NativeMethods.libssh2_channel_process_startup(
+                    channelHandle,
+                    request,
+                    (uint)request.Length,
+                    command,
+                    (uint)command.Length);
+
+                if (result != LIBSSH2_ERROR.NONE)
+                {
+                    channelHandle.Dispose();
+                    throw this.Session.CreateException(result);
+                }
+
+                SshEventSource.Log.ShellChannelOpened(command);
 
                 return new Libssh2ShellChannel(this.Session, channelHandle);
             }

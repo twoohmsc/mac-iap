@@ -40,11 +40,9 @@ namespace Google.Solutions.IapDesktop.Extensions.Session.Protocol.Ssh
 
         public CngKeyName(
             IOidcSession session,
-            SshKeyType keyType,
-            CngProvider provider)
+            SshKeyType keyType)
         {
             session.ExpectNotNull(nameof(session));
-            provider.ExpectNotNull(nameof(provider));
 
             this.Type = keyType switch
             {
@@ -55,40 +53,10 @@ namespace Google.Solutions.IapDesktop.Extensions.Session.Protocol.Ssh
                 _ => throw new ArgumentOutOfRangeException(nameof(keyType))
             };
 
-            if (keyType == SshKeyType.Rsa3072 &&
-                provider == CngProvider.MicrosoftSoftwareKeyStorageProvider)
-            {
-                //
-                // Use backwards-compatible name.
-                //
-                this.Value = $"IAPDESKTOP_{session.Username}";
-            }
-            else
-            {
-                //
-                // Embed the key type and provider in the name. 
-                //
-                // CNG key names aren't scoped to a provider. By embedding the
-                // provider name in the key, we ensure that we don't accidentally
-                // use a key from a provider different from the one we're 
-                // expecting to use.
-                //
-                // NB. Use SHA256.Create for FIPS-awareness.
-                //
-                using (var sha = SHA256.Create())
-                {
-                    //
-                    // Instead of using the full provider name (which can be
-                    // very long), hash the name and use the prefix.
-                    //
-                    var providerToken = BitConverter.ToString(
-                        sha.ComputeHash(Encoding.UTF8.GetBytes(provider.Provider)),
-                        0,
-                        4).Replace("-", string.Empty);
-
-                    this.Value = $"IAPDESKTOP_{session.Username}_{keyType:x}_{providerToken}";
-                }
-            }
+            //
+            // Use a simple, consistent naming scheme across platforms.
+            //
+            this.Value = $"IAPDESKTOP_{session.Username}_{keyType:x}";
         }
 
         public KeyType Type { get; }

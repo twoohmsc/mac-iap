@@ -1,0 +1,54 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Solutions.Common", "Google.Solutions.Common\Google.Solutions.Common.csproj", "{95E2856E-856A-4A8B-8230-C11985929672}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Solutions.Apis", "Google.Solutions.Apis\Google.Solutions.Apis.csproj", "{E12E5558-5421-464A-8A46-55928AA86256}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Solutions.Iap", "Google.Solutions.Iap\Google.Solutions.Iap.csproj", "{5F116127-C3F2-49D7-A845-873641255502}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Solutions.Platform", "Google.Solutions.Platform\Google.Solutions.Platform.csproj", "{08309C59-12F2-4221-BEF9-923616641A3D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Google.Solutions.Ssh", "Google.Solutions.Ssh\Google.Solutions.Ssh.csproj", "{21187428-5666-412E-904E-587289569722}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IapDesktop.Console", "IapDesktop.Console\IapDesktop.Console.csproj", "{77777777-7777-7777-7777-777777777777}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IapDesktop.Application.Avalonia", "IapDesktop.Application.Avalonia\IapDesktop.Application.Avalonia.csproj", "{88888888-8888-8888-8888-888888888888}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{95E2856E-856A-4A8B-8230-C11985929672}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95E2856E-856A-4A8B-8230-C11985929672}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95E2856E-856A-4A8B-8230-C11985929672}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95E2856E-856A-4A8B-8230-C11985929672}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E12E5558-5421-464A-8A46-55928AA86256}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E12E5558-5421-464A-8A46-55928AA86256}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E12E5558-5421-464A-8A46-55928AA86256}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E12E5558-5421-464A-8A46-55928AA86256}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F116127-C3F2-49D7-A845-873641255502}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F116127-C3F2-49D7-A845-873641255502}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F116127-C3F2-49D7-A845-873641255502}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F116127-C3F2-49D7-A845-873641255502}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08309C59-12F2-4221-BEF9-923616641A3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08309C59-12F2-4221-BEF9-923616641A3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08309C59-12F2-4221-BEF9-923616641A3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08309C59-12F2-4221-BEF9-923616641A3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{21187428-5666-412E-904E-587289569722}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{21187428-5666-412E-904E-587289569722}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{21187428-5666-412E-904E-587289569722}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{21187428-5666-412E-904E-587289569722}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77777777-7777-7777-7777-777777777777}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77777777-7777-7777-7777-777777777777}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77777777-7777-7777-7777-777777777777}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77777777-7777-7777-7777-777777777777}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88888888-8888-8888-8888-888888888888}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88888888-8888-8888-8888-888888888888}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88888888-8888-8888-8888-888888888888}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88888888-8888-8888-8888-888888888888}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
