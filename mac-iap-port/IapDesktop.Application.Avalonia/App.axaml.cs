@@ -42,8 +42,8 @@ namespace IapDesktop.Application.Avalonia
                     store,
                     new OidcClientRegistration(
                         OidcIssuer.Gaia,
-                        "74657-iap-desktop-client-id.apps.googleusercontent.com",
-                        "secret",
+                        OAuthClient.ClientId,
+                        OAuthClient.ClientSecret,
                         "/authorize/"),
                     userAgent);
 
@@ -53,14 +53,56 @@ namespace IapDesktop.Application.Avalonia
                 //
                 // Try to authorize silently or interactively.
                 //
-                // NB. We're doing this on the UI thread, which is not ideal,
-                // but good enough for a prototype.
-                //
                 try 
                 {
-                    var session = await authClient.AuthorizeAsync(
-                        new LocalServerCodeReceiver(),
-                        CancellationToken.None);
+                    IOidcSession session;
+
+                    if (OAuthClient.ClientId == "YOUR_CLIENT_ID_HERE")
+                    {
+                        //
+                        // Fallback: Use Application Default Credentials (gcloud)
+                        //
+                        Console.WriteLine("Using Application Default Credentials (gcloud)...");
+                        var gcloudCredential = await GoogleCredential.GetApplicationDefaultAsync();
+                        if (gcloudCredential.IsCreateScopedRequired)
+                        {
+                            gcloudCredential = gcloudCredential.CreateScoped(
+                                "https://www.googleapis.com/auth/cloud-platform",
+                                "https://www.googleapis.com/auth/compute",
+                                "email",
+                                "profile");
+                        }
+                        
+                        // Try to get the email address from the token info
+                        string email = "gcloud-user@example.com";
+                        try
+                        {
+                            var token = await gcloudCredential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+                            using (var client = new System.Net.Http.HttpClient())
+                            {
+                                var response = await client.GetAsync($"https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={token}");
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    var json = await response.Content.ReadAsStringAsync();
+                                    // Simple parse to avoid dependency
+                                    var emailPart = json.Split(new[] { "\"email\": \"" }, StringSplitOptions.None)[1];
+                                    email = emailPart.Split('"')[0];
+                                }
+                            }
+                        }
+                        catch { /* Best effort */ }
+
+                        session = new GcloudOidcSession(gcloudCredential, email);
+                    }
+                    else
+                    {
+                        //
+                        // Standard OAuth Flow
+                        //
+                        session = await authClient.AuthorizeAsync(
+                            new LocalServerCodeReceiver(),
+                            CancellationToken.None);
+                    }
                     
                     var authorization = new AuthorizationAdapter(session);
                     

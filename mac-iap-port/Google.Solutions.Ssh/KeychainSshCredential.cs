@@ -1,11 +1,10 @@
 using Google.Solutions.Common.Runtime;
 using Google.Solutions.Platform.Security.Cryptography;
-using Google.Solutions.Ssh;
 using Google.Solutions.Ssh.Cryptography;
 using System;
 using System.Security.Cryptography;
 
-namespace IapDesktop.Application.Avalonia.Models
+namespace Google.Solutions.Ssh
 {
     /// <summary>
     /// SSH credential that uses macOS Keychain for key storage.

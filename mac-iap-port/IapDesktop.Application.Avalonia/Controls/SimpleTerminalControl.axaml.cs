@@ -11,7 +11,7 @@ namespace IapDesktop.Application.Avalonia.Controls
 {
     public partial class SimpleTerminalControl : UserControl
     {
-        private readonly StringBuilder inputBuffer = new StringBuilder();
+
         
         public event EventHandler<string>? UserInput;
 
@@ -29,51 +29,64 @@ namespace IapDesktop.Application.Avalonia.Controls
 
         private void OutputEditor_TextInput(object? sender, TextInputEventArgs e)
         {
-            // Simple logic: append to buffer and display locally?
-            // Or rely on remote echo?
-            // Usually remote echo is best. If we echo locally + remote echo, we get double chars.
-            // Let's assume remote echo. So we send chars immediately?
-            // Or line buffering?
-            // If line buffering, we handle locally.
-            // Let's implement line buffering for simplicity first.
+            // Raw Input Mode:
+            // Forward everything to the backend. Do NOT echo locally.
+            // The server will echo back characters if appropriate.
             
             if (!string.IsNullOrEmpty(e.Text))
             {
-                foreach (char c in e.Text)
-                {
-                    // Handle backspace handled in KeyDown?
-                    // TextInput usually gives printable chars.
-                    if (c >= 32)
-                    {
-                        inputBuffer.Append(c);
-                        AppendText(c.ToString()); // Local echo for line editing visual
-                    }
-                }
+                UserInput?.Invoke(this, e.Text);
             }
+            
+            // Prevent local insertion
+            e.Handled = true;
         }
 
         private void OutputEditor_KeyDown(object? sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            // Handle special keys that don't trigger TextInput
+            string? sequence = null;
+
+            switch (e.Key)
             {
-                var input = inputBuffer.ToString();
-                inputBuffer.Clear();
-                AppendText("\n"); // Local echo newline
-                
-                UserInput?.Invoke(this, input + "\n");
-                e.Handled = true;
+                case Key.Enter:
+                    sequence = "\r";
+                    break;
+                case Key.Back:
+                    sequence = "\x7f"; // DEL is usually what backspace sends in terminals
+                    break;
+                case Key.Tab:
+                    sequence = "\t";
+                    break;
+                case Key.Up:
+                    sequence = "\x1b[A";
+                    break;
+                case Key.Down:
+                    sequence = "\x1b[B";
+                    break;
+                case Key.Right:
+                    sequence = "\x1b[C";
+                    break;
+                case Key.Left:
+                    sequence = "\x1b[D";
+                    break;
+                case Key.Escape:
+                    sequence = "\x1b";
+                    break;
+                case Key.Home:
+                     sequence = "\x1b[H";
+                     break;
+                case Key.End:
+                     sequence = "\x1b[F";
+                     break;
+                case Key.Delete:
+                    sequence = "\x1b[3~";
+                    break;
             }
-            else if (e.Key == Key.Back)
+
+            if (sequence != null)
             {
-                if (inputBuffer.Length > 0)
-                {
-                    inputBuffer.Length--;
-                    // Remove last char from document
-                    if (OutputEditor.Document.TextLength > 0)
-                    {
-                        OutputEditor.Document.Remove(OutputEditor.Document.TextLength - 1, 1);
-                    }
-                }
+                UserInput?.Invoke(this, sequence);
                 e.Handled = true;
             }
         }
@@ -101,7 +114,6 @@ namespace IapDesktop.Application.Avalonia.Controls
             Dispatcher.UIThread.InvokeAsync(() =>
             {
                 OutputEditor.Document.Text = "";
-                inputBuffer.Clear();
             });
         }
     }

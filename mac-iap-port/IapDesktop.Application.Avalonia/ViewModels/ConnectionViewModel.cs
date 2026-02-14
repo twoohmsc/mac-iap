@@ -54,93 +54,93 @@ namespace IapDesktop.Application.Avalonia.ViewModels
 
         public async Task ConnectAsync()
         {
-            try
+            await Task.Run(() =>
             {
-                StatusText = "Connecting via IAP...";
-                
-                // 1. Create IAP Listener (Local Port Forward)
-                var target = iapClient.GetTarget(
-                    instance, 
-                    22, 
-                    IapClient.DefaultNetworkInterface);
-
-                var listener = new IapListener(
-                    target, 
-                    new AllowAllPolicy(), 
-                    null); // Dynamic port
-
-                // Start listening
-                // Note: ListenAsync runs in background. 
-                // We should keep track of the task if we want to await it, 
-                // but usually it runs until token cancellation.
-                var cts = new CancellationTokenSource();
-                _ = listener.ListenAsync(cts.Token);
-                
-                StatusText = $"IAP tunnel listening on {listener.LocalEndpoint}";
-
-                // 2. Load Credential from Keychain
-                ISshCredential credential;
                 try
                 {
-                    // Extract username from email (e.g., user@example.com -> user)
-                    var email = authorization.Session.Username;
-                    var username = email.Split('@')[0].ToLowerInvariant();
+                    StatusText = "Connecting via IAP...";
                     
-                    // Use RSA 3072-bit key (standard for SSH)
-                    var keyType = new Google.Solutions.Platform.Security.Cryptography.KeyType(
-                        System.Security.Cryptography.CngAlgorithm.Rsa, 
-                        3072);
-                    
-                    var keyName = $"IAPDESKTOP_{username}_ssh";
+                    // 1. Create IAP Listener (Local Port Forward)
+                    var target = iapClient.GetTarget(
+                        instance, 
+                        22, 
+                        IapClient.DefaultNetworkInterface);
 
-                    credential = new Models.KeychainSshCredential(
-                        username,
-                        keyStore,
-                        keyName,
-                        keyType);
+                    var listener = new IapListener(
+                        target, 
+                        new AllowAllPolicy(), 
+                        null); // Dynamic port
+
+                    // Start listening
+                    var cts = new CancellationTokenSource();
+                    _ = listener.ListenAsync(cts.Token);
                     
-                    StatusText += $"\nLoaded SSH key from Keychain for {username}";
+                    StatusText = $"IAP tunnel listening on {listener.LocalEndpoint}";
+
+                    // 2. Load Credential from Keychain
+                    ISshCredential credential;
+                    try
+                    {
+                        // Extract username from email (e.g., user@example.com -> user)
+                        var email = authorization.Session.Username;
+                        var username = email.Split('@')[0].ToLowerInvariant();
+                        
+                        // Use RSA 3072-bit key (standard for SSH)
+                        var keyType = new Google.Solutions.Platform.Security.Cryptography.KeyType(
+                            System.Security.Cryptography.CngAlgorithm.Rsa, 
+                            3072);
+                        
+                        var keyName = $"IAPDESKTOP_{username}_ssh";
+
+                        credential = new KeychainSshCredential(
+                            username,
+                            keyStore,
+                            keyName,
+                            keyType);
+                        
+                        StatusText += $"\nLoaded SSH key from Keychain for {username}";
+                    }
+                    catch (Exception ex)
+                    {
+                        StatusText += $"\nFailed to load Keychain key: {ex.Message}";
+                        throw new Exception($"Failed to initialize SSH credential from Keychain: {ex.Message}", ex);
+                    }
+
+                    // 3. Establish SSH Session
+                    StatusText += "\nEstablishing SSH session...";
+                    
+                    this.session = new Libssh2Session();
+                    
+                    // Connect to the local IAP endpoint
+                    var connectedSession = this.session.Connect(listener.LocalEndpoint);
+                    
+                    // Authenticate
+                    var authenticatedSession = connectedSession.Authenticate(
+                        credential,
+                        new GuiKeyboardInteractiveHandler());
+                    
+                    StatusText += "\nOpening shell channel...";
+                    
+                    // Open Shell Channel
+                    this.channel = authenticatedSession.OpenShellChannel(
+                        LIBSSH2_CHANNEL_EXTENDED_DATA.MERGE,
+                        "xterm",
+                        80,
+                        24);
+                        
+                    StatusText = "Connected.";
+                    IsConnected = true;
+
+                    // 4. Start Output Loop
+                    _ = ReadOutputAsync();
                 }
                 catch (Exception ex)
                 {
-                    StatusText += $"\nFailed to load Keychain key: {ex.Message}";
-                    throw new Exception($"Failed to initialize SSH credential from Keychain: {ex.Message}", ex);
+                    StatusText = $"Error: {ex.Message}";
+                    ConnectionError?.Invoke(this, ex.Message);
+                    OnOutputReceived($"\nConnection failed: {ex.Message}\n");
                 }
-
-                // 3. Establish SSH Session
-                StatusText += "\nEstablishing SSH session...";
-                
-                this.session = new Libssh2Session();
-                
-                // Connect to the local IAP endpoint
-                var connectedSession = this.session.Connect(listener.LocalEndpoint);
-                
-                // Authenticate
-                var authenticatedSession = connectedSession.Authenticate(
-                    credential,
-                    null); // No keyboard interactive handler for now
-                
-                StatusText += "\nOpening shell channel...";
-                
-                // Open Shell Channel
-                this.channel = authenticatedSession.OpenShellChannel(
-                    LIBSSH2_CHANNEL_EXTENDED_DATA.MERGE,
-                    "xterm",
-                    80,
-                    24);
-                    
-                StatusText = "Connected.";
-                IsConnected = true;
-
-                // 4. Start Output Loop
-                _ = ReadOutputAsync();
-            }
-            catch (Exception ex)
-            {
-                StatusText = $"Error: {ex.Message}";
-                ConnectionError?.Invoke(this, ex.Message);
-                OnOutputReceived($"\nConnection failed: {ex.Message}\n");
-            }
+            });
         }
 
         private async Task ReadOutputAsync()
@@ -204,6 +204,22 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         private class AllowAllPolicy : IIapListenerPolicy
         {
             public bool IsClientAllowed(IPEndPoint remote) => true;
+        }
+
+        private class GuiKeyboardInteractiveHandler : IKeyboardInteractiveHandler
+        {
+            public string? Prompt(string caption, string instruction, string prompt, bool echo)
+            {
+                // For now, just log and return null or empty? 
+                // In a real GUI, we would show a dialog.
+                System.Diagnostics.Debug.WriteLine($"[SSH Prompt] {caption}: {instruction} ({prompt})");
+                return null;
+            }
+
+            public IPasswordCredential PromptForCredentials(string username)
+            {
+                throw new NotImplementedException("Password authentication is not yet supported in the GUI.");
+            }
         }
     }
 }

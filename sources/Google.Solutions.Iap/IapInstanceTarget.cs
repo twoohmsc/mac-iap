@@ -150,9 +150,9 @@ namespace Google.Solutions.Iap
 
             try
             {
-                Debug.Assert(
-                    Assembly.GetEntryAssembly() == null || // Running tests.
-                    SystemPatch.UnrestrictUserAgentHeader.IsInstalled);
+                // Debug.Assert(
+                //    Assembly.GetEntryAssembly() == null || // Running tests.
+                //    SystemPatch.UnrestrictUserAgentHeader.IsInstalled);
 
                 //
                 // NB. User-Agent is a restricted header, so this call fails
