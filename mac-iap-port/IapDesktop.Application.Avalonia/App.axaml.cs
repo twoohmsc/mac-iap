@@ -62,7 +62,7 @@ namespace IapDesktop.Application.Avalonia
                 //
                 var enrollment = new DeviceEnrollment();
                 var userAgent = new UserAgent(
-                    "IapDesktop.Application.Avalonia", 
+                    "IAP for macOS", 
                     new Version(1, 0),
                     Environment.OSVersion.ToString());
                 
@@ -162,13 +162,19 @@ namespace IapDesktop.Application.Avalonia
                     
                     var filePickerService = new IapDesktop.Application.Avalonia.Services.FilePickerService(mainWindow);
 
+                    var projectStorePath = System.IO.Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                        ".iap-projects.json");
+                    var projectRepository = new IapDesktop.Application.Avalonia.Services.ProjectRepository(projectStorePath);
+
                     mainWindow.DataContext = new ViewModels.MainViewModel(
                         computeClient, 
                         authorization, 
                         userAgent, 
                         keyStore, 
                         sshKeyService,
-                        filePickerService);
+                        filePickerService,
+                        projectRepository);
 
                     desktop.MainWindow = mainWindow;
                     mainWindow.Show();

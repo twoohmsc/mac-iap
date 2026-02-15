@@ -1,6 +1,6 @@
-# IAP Desktop (macOS Port) 🐧💻
+# IAP for macOS 🐧💻
 
-IAP Desktop is a professional Remote Desktop and SSH client that provides secure, zero-trust access to your Google Cloud VM instances from anywhere—now available on **macOS**.
+IAP for macOS is a professional Remote Desktop and SSH client that provides secure, zero-trust access to your Google Cloud VM instances from anywhere.
 
 [![GitHub Release](https://img.shields.io/github/v/release/GoogleCloudPlatform/iap-desktop?label=Latest%20Release)](https://github.com/GoogleCloudPlatform/iap-desktop/releases/latest)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE.txt)
@@ -17,7 +17,7 @@ IAP Desktop is a professional Remote Desktop and SSH client that provides secure
 ## 🚀 Key Features
 
 ### 🛡️ Zero-Trust Security (IAP)
-IAP Desktop uses [Identity-Aware-Proxy (IAP)](https://cloud.google.com/iap/docs/tcp-forwarding-overview) to provide secure access without needing public IP addresses.
+IAP for macOS uses [Identity-Aware-Proxy (IAP)](https://cloud.google.com/iap/docs/tcp-forwarding-overview) to provide secure access without needing public IP addresses.
 *   **Context-Aware Access**: Define who can access which VM based on identity and device health.
 *   **No Public IPs**: Keep your VMs hidden from the public internet.
 *   **Automatic Tunnels**: Seamlessly manages IAP TCP forwarding tunnels for you.
@@ -70,8 +70,8 @@ dotnet run
 ---
 
 ## 🤝 Contributing
-IAP Desktop is an open-source project. We welcome contributions, bug reports, and feature requests!
+IAP for macOS is an open-source project. We welcome contributions, bug reports, and feature requests!
 
-_IAP Desktop is an open-source project developed and maintained by the Google Cloud Solutions Architects team. The project is not an officially supported Google product._
+_IAP for macOS is an open-source project developed and maintained by the Google Cloud Solutions Architects team. The project is not an officially supported Google product._
 
 _All files in this repository are under the [Apache License, Version 2.0](LICENSE.txt) unless noted otherwise._

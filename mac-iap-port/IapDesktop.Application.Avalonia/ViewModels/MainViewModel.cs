@@ -36,7 +36,8 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             UserAgent userAgent,
             Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore,
             IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService,
-            IapDesktop.Application.Avalonia.Services.IFilePickerService filePickerService)
+            IapDesktop.Application.Avalonia.Services.IFilePickerService filePickerService,
+            IapDesktop.Application.Avalonia.Services.IProjectRepository projectRepository)
         {
             this.authorization = authorization;
             this.userAgent = userAgent;
@@ -51,7 +52,12 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             
             this.rdpService = new IapDesktop.Application.Avalonia.Services.RdpConnectionService();
 
-            ProjectExplorer = new ProjectExplorerViewModel(this, computeClient, authorization, userAgent);
+            ProjectExplorer = new ProjectExplorerViewModel(
+                this, 
+                computeClient, 
+                authorization, 
+                userAgent,
+                projectRepository);
         }
 
         public void OpenConnection(InstanceLocator instance)

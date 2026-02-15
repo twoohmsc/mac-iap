@@ -98,8 +98,16 @@ namespace IapDesktop.Application.Avalonia.ViewModels
 
         public void Dispose()
         {
-            this.cts?.Cancel();
-            this.cts?.Dispose();
+            var cts = Interlocked.Exchange(ref this.cts, null);
+            if (cts != null)
+            {
+                try
+                {
+                    cts.Cancel();
+                }
+                catch (ObjectDisposedException) { }
+                cts.Dispose();
+            }
             this.listener = null;
         }
 

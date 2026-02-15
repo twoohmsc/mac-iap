@@ -25,6 +25,7 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         private readonly MainViewModel mainViewModel;
         private readonly IAuthorization authorization;
         private readonly UserAgent userAgent;
+        private readonly IapDesktop.Application.Avalonia.Services.IProjectRepository projectRepository;
         
         [ObservableProperty]
         private ProjectExplorerNode? selectedNode;
@@ -33,12 +34,20 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             MainViewModel mainViewModel, 
             ComputeEngineClient computeClient,
             IAuthorization authorization, 
-            UserAgent userAgent)
+            UserAgent userAgent,
+            IapDesktop.Application.Avalonia.Services.IProjectRepository projectRepository)
         {
             this.mainViewModel = mainViewModel;
             this.computeClient = computeClient;
             this.authorization = authorization;
             this.userAgent = userAgent;
+            this.projectRepository = projectRepository;
+
+            // Load persisted projects
+            foreach (var projectId in projectRepository.ListProjects())
+            {
+                _ = AddProject(projectId);
+            }
         }
 
         public ProjectExplorerViewModel() 
@@ -89,6 +98,7 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             {
                 projectNode = new ProjectNode(projectId);
                 RootNodes.Add(projectNode);
+                projectRepository.AddProject(projectId);
                 Console.WriteLine($"DEBUG: Added new ProjectNode for '{projectId}'");
             }
             else
@@ -165,6 +175,7 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             {
                 Console.WriteLine($"DEBUG: Removing ProjectNode for '{projectNode.ProjectId}'");
                 RootNodes.Remove(projectNode);
+                projectRepository.RemoveProject(projectNode.ProjectId);
             }
         }
 

@@ -8,7 +8,7 @@
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="IapDesktop.Application.Avalonia.MainWindow"
         x:DataType="vm:MainViewModel"
-        Title="IAP Desktop (macOS Port)"
+        Title="IAP for macOS"
         Icon="avares://IapDesktop.Application.Avalonia/Assets/AppIcon.iconset/icon_512x512.png"
         TransparencyLevelHint="None"
         Background="#1E1E1E">
