@@ -12,6 +12,9 @@ IAP for macOS is a professional Remote Desktop and SSH client that provides secu
 > 
 > **Special Thanks** to the original [IAP Desktop team at Google](https://github.com/GoogleCloudPlatform/iap-desktop/graphs/contributors) for their incredible work on the core logic and security framework that made this port possible! 🚀
 
+> [!CAUTION]
+> **Early Stage Development**: This tool is currently in a very early stage of development and is **not intended for production use**. Expect bugs and potential breaking changes! 🧪🛠️
+
 ---
 
 ## 🚀 Key Features
