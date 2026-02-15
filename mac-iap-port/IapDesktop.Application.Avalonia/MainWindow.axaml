@@ -102,6 +102,13 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="☁️" Margin="0,0,5,0"/>
                                 <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                <StackPanel.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Remove Project" 
+                                                  Command="{Binding $parent[Window].((vm:MainViewModel)DataContext).ProjectExplorer.RemoveProjectCommand}"
+                                                  CommandParameter="{Binding}"/>
+                                    </ContextMenu>
+                                </StackPanel.ContextMenu>
                             </StackPanel>
                         </TreeDataTemplate>
                         <TreeDataTemplate DataType="vm:ZoneNode" ItemsSource="{Binding Children}">
@@ -112,7 +119,7 @@
                         </TreeDataTemplate>
                         <DataTemplate DataType="vm:InstanceNode">
                              <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🖥️" Margin="0,0,5,0"/>
+                                <TextBlock Text="{Binding Icon}" Margin="0,0,5,0"/>
                                 <TextBlock Text="{Binding Name}"/>
                                 <StackPanel.ContextMenu>
                                     <ContextMenu>

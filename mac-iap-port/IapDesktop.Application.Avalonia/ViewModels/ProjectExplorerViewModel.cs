@@ -72,53 +72,80 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         }
 
         [RelayCommand]
+        private async Task AddProject(string? projectId)
+        {
+            if (string.IsNullOrWhiteSpace(projectId))
+            {
+                return;
+            }
+
+            if (RootNodes.Any(n => n is ProjectNode p && p.ProjectId == projectId))
+            {
+                return; // Already added
+            }
+
+            try
+            {
+                var projectNode = new ProjectNode(projectId);
+                RootNodes.Add(projectNode);
+
+                var instances = await computeClient.ListInstancesAsync(
+                    new ProjectLocator(projectId),
+                    CancellationToken.None);
+
+                // Group by Zone
+                var zoneGroups = instances.GroupBy(i => i.Zone);
+
+                foreach (var zoneGroup in zoneGroups)
+                {
+                    var zoneId = zoneGroup.Key.Contains('/')
+                       ? zoneGroup.Key.Substring(zoneGroup.Key.LastIndexOf('/') + 1)
+                       : zoneGroup.Key;
+
+                    var zoneNode = new ZoneNode(projectId, zoneId);
+                    projectNode.Children.Add(zoneNode);
+
+                    foreach (var instance in zoneGroup)
+                    {
+                        var instanceLocator = new InstanceLocator(projectId, zoneId, instance.Name);
+
+                        // Improved OS Detection: Check licenses and guest-os-features
+                        var isWindows = instance.Disks.Any(d => d.Licenses?.Any(l => l.Contains("windows-server", System.StringComparison.OrdinalIgnoreCase)) ?? false) ||
+                                       instance.GuestAccelerators.Any(a => a.AcceleratorType.Contains("windows", System.StringComparison.OrdinalIgnoreCase)); // Fallback or extra check
+                        
+                        // Check common Windows imaging features if licenses are missing
+                        if (!isWindows && instance.Disks.Any(d => d.Architecture?.Equals("X86_64", System.StringComparison.OrdinalIgnoreCase) ?? false))
+                        {
+                            // This is still a bit of a guess if licenses are stripped, but licenses are the primary source.
+                        }
+
+                        var os = isWindows ? "Windows" : "Linux";
+                        var instanceNode = new InstanceNode(instanceLocator, os);
+                        zoneNode.Children.Add(instanceNode);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                // Find or add an error node specifically for this project or global?
+                // For now, just show a message or add a dummy node under the project
+                // RootNodes.Add(new ProjectNode($"Error ({projectId}): {ex.Message}"));
+            }
+        }
+
+        [RelayCommand]
+        private void RemoveProject(ProjectNode? projectNode)
+        {
+            if (projectNode != null)
+            {
+                RootNodes.Remove(projectNode);
+            }
+        }
+
+        [RelayCommand]
         private async Task LoadNodes(string projectId)
         {
-             CurrentProjectId = projectId;
-             RootNodes.Clear();
-             
-             try
-             {
-                 // Create root Project Node
-                 var projectNode = new ProjectNode(projectId);
-                 RootNodes.Add(projectNode);
-
-                 var instances = await computeClient.ListInstancesAsync(
-                     new ProjectLocator(projectId), 
-                     CancellationToken.None);
-                 
-                 // Group by Zone
-                 var zoneGroups = instances.GroupBy(i => i.Zone);
-
-                 foreach (var zoneGroup in zoneGroups)
-                 {
-                     // Extract zone name from full URL or partial URL
-                     var zoneId = zoneGroup.Key.Contains('/') 
-                        ? zoneGroup.Key.Substring(zoneGroup.Key.LastIndexOf('/') + 1)
-                        : zoneGroup.Key;
-
-                     var zoneNode = new ZoneNode(projectId, zoneId);
-                     projectNode.Children.Add(zoneNode);
-
-                     foreach (var instance in zoneGroup)
-                     {
-                         // Determine OS icon if possible (or default)
-                         var instanceLocator = new InstanceLocator(projectId, zoneId, instance.Name);
-                         
-                         var isWindows = instance.Disks.Any(d => d.Licenses?.Any(l => l.Contains("windows-server", System.StringComparison.OrdinalIgnoreCase)) ?? false);
-                         var os = isWindows ? "Windows" : "Linux";
-
-                         var instanceNode = new InstanceNode(instanceLocator, os);
-                         zoneNode.Children.Add(instanceNode);
-                     }
-                 }
-             }
-             catch (System.Exception ex)
-             {
-                 // Add error node
-                 RootNodes.Clear();
-                 RootNodes.Add(new ProjectNode($"Error: {ex.Message}"));
-             }
+             await AddProject(projectId);
         }
 
         private string? CurrentProjectId;

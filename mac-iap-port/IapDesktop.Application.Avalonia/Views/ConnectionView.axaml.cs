@@ -51,7 +51,6 @@ namespace IapDesktop.Application.Avalonia.Views
         private void OnOutputReceived(object? sender, string text)
         {
             Terminal.ProcessOutput(text);
-            Console.WriteLine($"DEBUG OUTPUT: {text}");
         }
     }
 }
