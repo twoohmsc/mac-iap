@@ -4,13 +4,19 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:IapDesktop.Application.Avalonia.ViewModels"
         xmlns:views="using:IapDesktop.Application.Avalonia.Views"
+        xmlns:conv="using:IapDesktop.Application.Avalonia.Converters"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
         x:Class="IapDesktop.Application.Avalonia.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="IAP Desktop (macOS Port)"
-        Icon="avares://IapDesktop.Application.Avalonia/Assets/logo.ico"
+        Icon="avares://IapDesktop.Application.Avalonia/Assets/AppIcon.iconset/icon_512x512.png"
         TransparencyLevelHint="None"
         Background="#1E1E1E">
+
+    <Window.Resources>
+        <conv:ImageResourceConverter x:Key="ImageResourceConverter"/>
+        <conv:BoolNegationConverter x:Key="BoolNegationConverter"/>
+    </Window.Resources>
 
     <Design.DataContext>
         <vm:MainViewModel/>
@@ -93,8 +99,10 @@
                 
                 <TreeView ItemsSource="{Binding ProjectExplorer.RootNodes}" SelectedItem="{Binding ProjectExplorer.SelectedNode}" Background="#252526" Foreground="#F1F1F1" BorderThickness="0">
                     <TreeView.Styles>
-                        <Style Selector="TreeViewItem">
+                        <Style Selector="TreeViewItem" x:DataType="vm:ProjectExplorerNode">
                             <Setter Property="Foreground" Value="#F1F1F1"/>
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                         </Style>
                     </TreeView.Styles>
                     <TreeView.DataTemplates>
@@ -119,8 +127,16 @@
                         </TreeDataTemplate>
                         <DataTemplate DataType="vm:InstanceNode">
                              <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Icon}" Margin="0,0,5,0"/>
-                                <TextBlock Text="{Binding Name}"/>
+                                <Panel Width="16" Height="16" Margin="0,0,5,0">
+                                    <TextBlock Text="{Binding Icon}" 
+                                               IsVisible="{Binding IsImageIcon, Converter={StaticResource BoolNegationConverter}}" 
+                                               VerticalAlignment="Center" 
+                                               HorizontalAlignment="Center"/>
+                                    <Image Source="{Binding Icon, Converter={StaticResource ImageResourceConverter}}" 
+                                           IsVisible="{Binding IsImageIcon}"
+                                           Width="16" Height="16"/>
+                                </Panel>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
                                 <StackPanel.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Header="Connect via SSH" 

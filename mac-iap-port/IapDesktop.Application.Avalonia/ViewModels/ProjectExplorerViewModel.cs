@@ -6,6 +6,8 @@ using Google.Solutions.Apis.Compute;
 using Google.Solutions.Apis.Locator;
 using Google.Solutions.Iap;
 using Google.Solutions.Iap.Net;
+using Avalonia.Threading;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net;
@@ -76,22 +78,39 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         {
             if (string.IsNullOrWhiteSpace(projectId))
             {
+                Console.WriteLine("DEBUG: AddProject called with null/empty projectId");
                 return;
             }
 
-            if (RootNodes.Any(n => n is ProjectNode p && p.ProjectId == projectId))
+            Console.WriteLine($"DEBUG: AddProject/Refresh for '{projectId}'");
+
+            var projectNode = RootNodes.OfType<ProjectNode>().FirstOrDefault(n => n.ProjectId == projectId);
+            if (projectNode == null)
             {
-                return; // Already added
+                projectNode = new ProjectNode(projectId);
+                RootNodes.Add(projectNode);
+                Console.WriteLine($"DEBUG: Added new ProjectNode for '{projectId}'");
+            }
+            else
+            {
+                Console.WriteLine($"DEBUG: Refreshing existing ProjectNode for '{projectId}'");
+                projectNode.Children.Clear();
             }
 
             try
             {
-                var projectNode = new ProjectNode(projectId);
-                RootNodes.Add(projectNode);
-
+                Console.WriteLine($"DEBUG: Listing instances for '{projectId}'...");
                 var instances = await computeClient.ListInstancesAsync(
                     new ProjectLocator(projectId),
                     CancellationToken.None);
+                
+                Console.WriteLine($"DEBUG: Found {instances?.Count() ?? 0} instances in project '{projectId}'");
+
+                if (instances == null || !instances.Any())
+                {
+                    Console.WriteLine("DEBUG: No instances found or instances list is null.");
+                    return;
+                }
 
                 // Group by Zone
                 var zoneGroups = instances.GroupBy(i => i.Zone);
@@ -102,34 +121,40 @@ namespace IapDesktop.Application.Avalonia.ViewModels
                        ? zoneGroup.Key.Substring(zoneGroup.Key.LastIndexOf('/') + 1)
                        : zoneGroup.Key;
 
+                    Console.WriteLine($"DEBUG: Adding ZoneNode '{zoneId}'");
                     var zoneNode = new ZoneNode(projectId, zoneId);
-                    projectNode.Children.Add(zoneNode);
+                    
+                    await Dispatcher.UIThread.InvokeAsync(() => {
+                        projectNode.Children.Add(zoneNode);
+                    });
 
+                    int count = 0;
                     foreach (var instance in zoneGroup)
                     {
                         var instanceLocator = new InstanceLocator(projectId, zoneId, instance.Name);
 
-                        // Improved OS Detection: Check licenses and guest-os-features
-                        var isWindows = instance.Disks.Any(d => d.Licenses?.Any(l => l.Contains("windows-server", System.StringComparison.OrdinalIgnoreCase)) ?? false) ||
-                                       instance.GuestAccelerators.Any(a => a.AcceleratorType.Contains("windows", System.StringComparison.OrdinalIgnoreCase)); // Fallback or extra check
+                        // Ensure collections are not null before calling Any()
+                        var isWindows = (instance.Disks?.Any(d => d.Licenses?.Any(l => l.Contains("windows-server", System.StringComparison.OrdinalIgnoreCase)) ?? false) ?? false) ||
+                                       (instance.GuestAccelerators?.Any(a => a.AcceleratorType.Contains("windows", System.StringComparison.OrdinalIgnoreCase)) ?? false);
                         
-                        // Check common Windows imaging features if licenses are missing
-                        if (!isWindows && instance.Disks.Any(d => d.Architecture?.Equals("X86_64", System.StringComparison.OrdinalIgnoreCase) ?? false))
-                        {
-                            // This is still a bit of a guess if licenses are stripped, but licenses are the primary source.
-                        }
-
                         var os = isWindows ? "Windows" : "Linux";
                         var instanceNode = new InstanceNode(instanceLocator, os);
-                        zoneNode.Children.Add(instanceNode);
+                        
+                        await Dispatcher.UIThread.InvokeAsync(() => {
+                            zoneNode.Children.Add(instanceNode);
+                        });
+                        count++;
                     }
+                    Console.WriteLine($"DEBUG: Added {count} instances to Zone '{zoneId}'");
                 }
             }
             catch (System.Exception ex)
             {
-                // Find or add an error node specifically for this project or global?
-                // For now, just show a message or add a dummy node under the project
-                // RootNodes.Add(new ProjectNode($"Error ({projectId}): {ex.Message}"));
+                Console.WriteLine($"DEBUG: AddProject failed for '{projectId}': {ex}");
+                await Dispatcher.UIThread.InvokeAsync(() => {
+                    var errorNode = new ProjectNode($"Error: {ex.Message}");
+                    projectNode.Children.Add(errorNode);
+                });
             }
         }
 
@@ -138,6 +163,7 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         {
             if (projectNode != null)
             {
+                Console.WriteLine($"DEBUG: Removing ProjectNode for '{projectNode.ProjectId}'");
                 RootNodes.Remove(projectNode);
             }
         }
@@ -145,9 +171,8 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         [RelayCommand]
         private async Task LoadNodes(string projectId)
         {
+             Console.WriteLine($"DEBUG: LoadNodes triggered for '{projectId}'");
              await AddProject(projectId);
         }
-
-        private string? CurrentProjectId;
     }
 }

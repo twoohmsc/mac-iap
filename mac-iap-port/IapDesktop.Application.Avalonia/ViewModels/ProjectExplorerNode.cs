@@ -18,6 +18,14 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         [ObservableProperty]
         private bool isSelected;
 
+        [ObservableProperty]
+        private bool isImageIcon;
+
+        partial void OnIsImageIconChanged(bool value)
+        {
+            System.Console.WriteLine($"DEBUG: Node '{Name}' IsImageIcon changed to: {value}");
+        }
+
         public ObservableCollection<ProjectExplorerNode> Children { get; } = new ObservableCollection<ProjectExplorerNode>();
 
         protected ProjectExplorerNode(string name, string icon)
@@ -61,11 +69,17 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         {
             Instance = instance;
             OperatingSystem = os;
+            IsImageIcon = os.ToLowerInvariant() != "windows";
         }
 
         private static string GetIconForOs(string os)
         {
-            return os.ToLowerInvariant() == "windows" ? "🪟" : "💻"; // Windows vs Laptop/Linux
+            if (os.ToLowerInvariant() == "windows")
+            {
+                return "🪟";
+            }
+            
+            return "avares://IapDesktop.Application.Avalonia/Assets/tux.png";
         }
     }
 }

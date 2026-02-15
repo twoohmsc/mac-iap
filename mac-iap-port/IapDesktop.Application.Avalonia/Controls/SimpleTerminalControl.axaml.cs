@@ -84,19 +84,59 @@ namespace IapDesktop.Application.Avalonia.Controls
             }
         }
           
-         public void AppendText(string text)
-         {
-             Dispatcher.UIThread.InvokeAsync(() =>
-             {
-                 var outputEditor = this.FindControl<AvaloniaEdit.TextEditor>("OutputEditor");
-                 if (outputEditor != null)
-                 {
-                     // Direct append to document
-                     outputEditor.Document.Insert(outputEditor.Document.TextLength, text);
-                     outputEditor.ScrollToEnd();
-                 }
-             });
-         }
+        private static readonly Regex AnsiRegex = new Regex(@"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", RegexOptions.Compiled);
+
+        public void AppendText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                var outputEditor = this.FindControl<AvaloniaEdit.TextEditor>("OutputEditor");
+                if (outputEditor == null) return;
+
+                // 1. Strip ANSI escape sequences
+                var cleanText = AnsiRegex.Replace(text, "");
+                
+                // 2. Process control characters (especially backspace \b)
+                var buffer = new StringBuilder();
+                foreach (char c in cleanText)
+                {
+                    if (c == '\b')
+                    {
+                        // Handle backspace by removing the last character from buffer or document
+                        if (buffer.Length > 0)
+                        {
+                            buffer.Remove(buffer.Length - 1, 1);
+                        }
+                        else if (outputEditor.Document.TextLength > 0)
+                        {
+                            outputEditor.Document.Remove(outputEditor.Document.TextLength - 1, 1);
+                        }
+                    }
+                    else if (c == '\r' || c == '\a')
+                    {
+                        // Ignore bell (\a) and standalone carriage returns (\r)
+                        // Note: \r is usually followed by \n which we want to keep.
+                        continue;
+                    }
+                    else
+                    {
+                        buffer.Append(c);
+                    }
+                }
+
+                if (buffer.Length > 0)
+                {
+                    outputEditor.Document.Insert(outputEditor.Document.TextLength, buffer.ToString());
+                }
+
+                outputEditor.ScrollToEnd();
+            });
+        }
          
 
          
