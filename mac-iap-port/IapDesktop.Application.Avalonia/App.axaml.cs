@@ -16,6 +16,41 @@ namespace IapDesktop.Application.Avalonia
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
+
+            // Register DllImportResolver for libssh2 on macOS
+            if (OperatingSystem.IsMacOS())
+            {
+                System.Runtime.InteropServices.NativeLibrary.SetDllImportResolver(
+                    typeof(Google.Solutions.Ssh.Native.Libssh2Session).Assembly,
+                    (libraryName, assembly, searchPath) =>
+                    {
+                        Console.WriteLine($"DEBUG: DllImportResolver called for {libraryName}");
+                        if (libraryName == "libssh2.dll" || libraryName == "libssh2")
+                        {
+                            // Try common Homebrew/MacPorts paths
+                            string[] paths = {
+                                "libssh2.dylib",
+                                "/opt/homebrew/lib/libssh2.dylib",
+                                "/usr/local/lib/libssh2.dylib",
+                                "libssh2.1.dylib",
+                                "/opt/homebrew/lib/libssh2.1.dylib",
+                                "/usr/local/lib/libssh2.1.dylib"
+                            };
+                            
+                            foreach (var path in paths)
+                            {
+                                Console.WriteLine($"DEBUG: Trying to load {path}...");
+                                if (System.Runtime.InteropServices.NativeLibrary.TryLoad(path, out var handle))
+                                {
+                                    Console.WriteLine($"DEBUG: Successfully loaded {path}");
+                                    return handle;
+                                }
+                            }
+                            Console.WriteLine("DEBUG: Failed to load libssh2 from any known path.");
+                        }
+                        return IntPtr.Zero;
+                    });
+            }
         }
 
         public override async void OnFrameworkInitializationCompleted()
@@ -123,10 +158,18 @@ namespace IapDesktop.Application.Avalonia
                         osLoginClient);
 
                     Console.WriteLine("DEBUG: Creating MainWindow...");
-                    var mainWindow = new MainWindow
-                    {
-                        DataContext = new ViewModels.MainViewModel(computeClient, authorization, userAgent, keyStore, sshKeyService)
-                    };
+                    var mainWindow = new MainWindow();
+                    
+                    var filePickerService = new IapDesktop.Application.Avalonia.Services.FilePickerService(mainWindow);
+
+                    mainWindow.DataContext = new ViewModels.MainViewModel(
+                        computeClient, 
+                        authorization, 
+                        userAgent, 
+                        keyStore, 
+                        sshKeyService,
+                        filePickerService);
+
                     desktop.MainWindow = mainWindow;
                     mainWindow.Show();
                     Console.WriteLine("DEBUG: MainWindow showed.");

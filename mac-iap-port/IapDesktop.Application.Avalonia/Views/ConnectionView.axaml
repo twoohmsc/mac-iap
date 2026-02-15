@@ -16,6 +16,11 @@
         </Border>
         
         <!-- Terminal -->
+        <!-- <Border Grid.Row="1" Background="Black">
+             <StackPanel>
+                 <TextBlock Text="DEBUG: Terminal Placeholder" Foreground="Red" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+             </StackPanel>
+        </Border> -->
         <controls:SimpleTerminalControl Grid.Row="1" x:Name="Terminal"/>
     </Grid>
 </UserControl>

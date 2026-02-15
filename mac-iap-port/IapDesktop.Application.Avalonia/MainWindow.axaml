@@ -8,9 +8,9 @@
         x:Class="IapDesktop.Application.Avalonia.MainWindow"
         x:DataType="vm:MainViewModel"
         Title="IAP Desktop (macOS Port)"
+        Icon="avares://IapDesktop.Application.Avalonia/Assets/logo.ico"
         TransparencyLevelHint="None"
-        Background="#1E1E1E"
-        ExtendClientAreaToDecorationsHint="True">
+        Background="#1E1E1E">
 
     <Design.DataContext>
         <vm:MainViewModel/>
@@ -29,39 +29,52 @@
     </Window.DataTemplates>
 
     <DockPanel>
+        <!-- Custom Title Bar (simulated/native) -->
+        <!-- We use native for now as requested -->
+        
         <!-- Menu Bar -->
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
+        <Menu DockPanel.Dock="Top" Background="#2D2D30" Foreground="#F1F1F1">
+            <MenuItem Header="_File" Foreground="#F1F1F1">
                 <MenuItem Header="_Exit" InputGesture="Cmd+Q" Click="Exit_Click"/>
             </MenuItem>
-            <MenuItem Header="_View">
+            <MenuItem Header="_View" Foreground="#F1F1F1">
                 <MenuItem Header="_Project Explorer"/>
                 <MenuItem Header="_Output Window"/>
             </MenuItem>
-            <MenuItem Header="_Tools">
+            <MenuItem Header="_Tools" Foreground="#F1F1F1">
                  <MenuItem Header="Options..."/>
             </MenuItem>
-            <MenuItem Header="_Help">
+            <MenuItem Header="_Help" Foreground="#F1F1F1">
                 <MenuItem Header="_About"/>
             </MenuItem>
         </Menu>
         
         <!-- Toolbar -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="#252526" Height="40">
-             <Button Margin="5" Command="{Binding ProjectExplorer.ConnectCommand}" ToolTip.Tip="Connect via SSH">
-                 <TextBlock Text="SSH 💻"/>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Background="#2D2D30" Height="40">
+             <Button Margin="5" Command="{Binding ProjectExplorer.ConnectCommand}" ToolTip.Tip="Connect via SSH (External)" Background="Transparent" BorderThickness="0">
+                 <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="💻" FontSize="16" Foreground="#007ACC"/>
+                    <TextBlock Text=" Connect" Foreground="#F1F1F1" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                 </StackPanel>
              </Button>
-             <Button Margin="5" Command="{Binding ProjectExplorer.ConnectRdpCommand}" ToolTip.Tip="Connect via RDP">
-                 <TextBlock Text="RDP 🖥️"/>
+             <Border Width="1" Background="#3E3E42" Margin="5"/>
+             <Button Margin="5" Command="{Binding ProjectExplorer.ConnectRdpCommand}" ToolTip.Tip="Connect via RDP" Background="Transparent" BorderThickness="0">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="🖥️" FontSize="16" Foreground="#007ACC"/>
+                    <TextBlock Text=" RDP" Foreground="#F1F1F1" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                 </StackPanel>
              </Button>
-             <Button Margin="5" Command="{Binding ProjectExplorer.ConnectSftpCommand}" ToolTip.Tip="SFTP Browser">
-                 <TextBlock Text="SFTP 📂"/>
+             <Button Margin="5" Command="{Binding ProjectExplorer.ConnectSftpCommand}" ToolTip.Tip="SFTP Browser" Background="Transparent" BorderThickness="0">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📂" FontSize="16" Foreground="#007ACC"/>
+                    <TextBlock Text=" SFTP" Foreground="#F1F1F1" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                 </StackPanel>
              </Button>
         </StackPanel>
 
         <!-- Main Status Bar -->
         <Border DockPanel.Dock="Bottom" Background="#007ACC" Height="25">
-             <TextBlock Text="Ready" Foreground="White" Margin="5,0"/>
+             <TextBlock Text="Ready" Foreground="White" Margin="5,0" VerticalAlignment="Center" FontSize="12"/>
         </Border>
 
         <!-- Main Content Split -->
@@ -69,28 +82,37 @@
              
             <!-- Project Explorer (Left) -->
             <DockPanel Grid.Column="0" Background="#252526">
+                <Border DockPanel.Dock="Top" Padding="10" Background="#2D2D30">
+                     <TextBlock Text="PROJECT EXPLORER" FontWeight="Bold" Foreground="#F1F1F1" FontSize="12"/>
+                </Border>
+                
                 <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5">
-                    <TextBox x:Name="ProjectIdBox" Watermark="Project ID" Width="200" Margin="0,0,5,0"/>
-                    <Button Command="{Binding ProjectExplorer.LoadNodesCommand}" CommandParameter="{Binding #ProjectIdBox.Text}" Content="Load"/>
+                    <TextBox x:Name="ProjectIdBox" Watermark="Project ID" Width="180" Margin="0,0,5,0" Background="#333333" Foreground="White" BorderThickness="1" BorderBrush="#3F3F46"/>
+                    <Button Command="{Binding ProjectExplorer.LoadNodesCommand}" CommandParameter="{Binding #ProjectIdBox.Text}" Content="⟳" ToolTip.Tip="Load Project" Background="#333333" Foreground="White"/>
                 </StackPanel>
                 
-                <TreeView ItemsSource="{Binding ProjectExplorer.RootNodes}" SelectedItem="{Binding ProjectExplorer.SelectedNode}" Background="#252526" Foreground="White">
+                <TreeView ItemsSource="{Binding ProjectExplorer.RootNodes}" SelectedItem="{Binding ProjectExplorer.SelectedNode}" Background="#252526" Foreground="#F1F1F1" BorderThickness="0">
+                    <TreeView.Styles>
+                        <Style Selector="TreeViewItem">
+                            <Setter Property="Foreground" Value="#F1F1F1"/>
+                        </Style>
+                    </TreeView.Styles>
                     <TreeView.DataTemplates>
                         <TreeDataTemplate DataType="vm:ProjectNode" ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Icon}" Margin="0,0,5,0"/>
+                                <TextBlock Text="☁️" Margin="0,0,5,0"/>
                                 <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
                             </StackPanel>
                         </TreeDataTemplate>
                         <TreeDataTemplate DataType="vm:ZoneNode" ItemsSource="{Binding Children}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Icon}" Margin="0,0,5,0"/>
+                                <TextBlock Text="📍" Margin="0,0,5,0"/>
                                 <TextBlock Text="{Binding Name}"/>
                             </StackPanel>
                         </TreeDataTemplate>
                         <DataTemplate DataType="vm:InstanceNode">
                              <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{Binding Icon}" Margin="0,0,5,0"/>
+                                <TextBlock Text="🖥️" Margin="0,0,5,0"/>
                                 <TextBlock Text="{Binding Name}"/>
                                 <StackPanel.ContextMenu>
                                     <ContextMenu>
@@ -113,7 +135,19 @@
 
             <!-- Active Sessions (Right) -->
             <Border Grid.Column="2" Background="#1E1E1E">
-                <TabControl ItemsSource="{Binding Connections}" SelectedItem="{Binding SelectedConnection}">
+                <TabControl ItemsSource="{Binding Connections}" SelectedItem="{Binding SelectedConnection}" Background="#1E1E1E">
+                    <TabControl.Styles>
+                        <Style Selector="TabItem">
+                            <Setter Property="FontSize" Value="12"/>
+                            <Setter Property="Foreground" Value="#CCCCCC"/>
+                            <Setter Property="Background" Value="#2D2D30"/>
+                            <Setter Property="Margin" Value="0,0,2,0"/>
+                        </Style>
+                        <Style Selector="TabItem:selected">
+                            <Setter Property="Background" Value="#1E1E1E"/>
+                            <Setter Property="Foreground" Value="#007ACC"/>
+                        </Style>
+                    </TabControl.Styles>
                     <TabControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">

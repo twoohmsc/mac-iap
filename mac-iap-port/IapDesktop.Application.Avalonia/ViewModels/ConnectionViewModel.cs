@@ -7,6 +7,7 @@ using Google.Solutions.Iap;
 using Google.Solutions.Common.Runtime;
 using Google.Solutions.Ssh;
 using Google.Solutions.Ssh.Native;
+using Google.Solutions.Ssh.Cryptography;
 using System;
 using System.IO;
 using System.Net;
@@ -79,43 +80,53 @@ namespace IapDesktop.Application.Avalonia.ViewModels
                     
                     StatusText = $"IAP tunnel listening on {listener.LocalEndpoint}";
 
-                    // 2. Load Credential from Keychain
-                    KeychainSshCredential credential;
+                    // 2. Load Credential (Keychain -> Fallback to Ephemeral)
+                    IAsymmetricKeyCredential credential;
                     try
                     {
                         var email = authorization.Session.Username;
                         var username = email.Split('@')[0].ToLowerInvariant();
                         
-                        var keyType = new Google.Solutions.Platform.Security.Cryptography.KeyType(
-                            System.Security.Cryptography.CngAlgorithm.Rsa, 
-                            3072);
-                        
-                        var keyName = $"IAPDESKTOP_{username}_ssh";
+                        try 
+                        {
+                            var keyType = new Google.Solutions.Platform.Security.Cryptography.KeyType(
+                                System.Security.Cryptography.CngAlgorithm.Rsa, 
+                                3072);
+                            
+                            var keyName = $"IAPDESKTOP_{username}_ssh";
 
-                        credential = new KeychainSshCredential(
-                            username,
-                            keyStore,
-                            keyName,
-                            keyType);
-                        
-                        StatusText += $"\nLoaded SSH key from Keychain for {username}";
+                            credential = new KeychainSshCredential(
+                                username,
+                                keyStore,
+                                keyName,
+                                keyType);
+                            
+                            StatusText += $"\nLoaded SSH key from Keychain for {username}";
+                        }
+                        catch (Exception ex)
+                        {
+                            StatusText += $"\nKeychain error: {ex.Message}. Using ephemeral key.";
+                            // Fallback to ephemeral key
+                            credential = new IapDesktop.Application.Avalonia.Services.Ssh.EphemeralSshCredential(username);
+                        }
                     }
                     catch (Exception ex)
                     {
-                        StatusText += $"\nFailed to load Keychain key: {ex.Message}";
-                        throw new Exception($"Failed to initialize SSH credential from Keychain: {ex.Message}", ex);
+                        StatusText += $"\nFailed to initialize SSH credential: {ex.Message}";
+                        throw new Exception($"Failed to initialize SSH credential: {ex.Message}", ex);
                     }
 
                     // 3. Authorize Key (Push to Metadata/OS Login)
                     StatusText += "\nAuthorizing SSH key...";
+                    string authorizedUsername;
                     try
                     {
-                        await sshKeyService.AuthorizeKeyAsync(
+                        authorizedUsername = await sshKeyService.AuthorizeKeyAsync(
                             instance,
                             credential.Signer,
                             TimeSpan.FromMinutes(10),
                             CancellationToken.None);
-                         StatusText += "\nKey authorized successfully.";
+                         StatusText += $"\nKey authorized successfully. Using username: {authorizedUsername}";
                     }
                     catch (Exception ex)
                     {
@@ -126,6 +137,11 @@ namespace IapDesktop.Application.Avalonia.ViewModels
                     // 4. Establish SSH Session using TerminalSshWorker
                     StatusText += "\nConnecting to SSH...";
                     
+                    if (authorizedUsername != credential.Username)
+                    {
+                        credential = new UsernameOverrideCredential(credential, authorizedUsername);
+                    }
+
                     this.worker = new IapDesktop.Application.Avalonia.Services.TerminalSshWorker(
                         listener.LocalEndpoint,
                         credential,
@@ -186,5 +202,30 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         }
 
 
+    }
+
+    internal class UsernameOverrideCredential : IAsymmetricKeyCredential, IDisposable
+    {
+        private readonly IAsymmetricKeyCredential backend;
+
+        public UsernameOverrideCredential(IAsymmetricKeyCredential backend, string username)
+        {
+            this.backend = backend;
+            this.Username = username;
+        }
+
+        public string Username { get; }
+        public IAsymmetricKeySigner Signer => this.backend.Signer;
+
+        public void Dispose()
+        {
+            // Do not dispose backend here as it might be owned by someone else, 
+            // or we might want to dispose it manually.
+            // In this specific usage in ConnectionViewModel, the original credential 
+            // was created locally, so we should arguably dispose it.
+            // But let's leave it to the owner of the original credential if possible.
+            // However, ConnectionViewModel "owns" the original credential too.
+            this.backend.Dispose();
+        }
     }
 }

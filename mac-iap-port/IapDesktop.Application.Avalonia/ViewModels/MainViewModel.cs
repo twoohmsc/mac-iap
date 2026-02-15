@@ -28,18 +28,21 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         private readonly Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore;
         private readonly IapDesktop.Application.Avalonia.Services.IRdpConnectionService rdpService;
         private readonly IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService;
+        private readonly IapDesktop.Application.Avalonia.Services.IFilePickerService filePickerService;
 
         public MainViewModel(
             ComputeEngineClient computeClient,
             IAuthorization authorization,
             UserAgent userAgent,
             Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore,
-            IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService)
+            IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService,
+            IapDesktop.Application.Avalonia.Services.IFilePickerService filePickerService)
         {
             this.authorization = authorization;
             this.userAgent = userAgent;
             this.keyStore = keyStore;
             this.sshKeyService = sshKeyService;
+            this.filePickerService = filePickerService;
 
             this.iapClient = new IapClient(
                 IapClient.CreateEndpoint(),
@@ -72,7 +75,7 @@ namespace IapDesktop.Application.Avalonia.ViewModels
 
         public void OpenSftpSession(InstanceLocator instance)
         {
-            var vm = new SftpBrowserViewModel(instance, iapClient, authorization, keyStore, sshKeyService);
+            var vm = new SftpBrowserViewModel(instance, iapClient, authorization, keyStore, sshKeyService, filePickerService);
             Connections.Add(vm);
             SelectedConnection = vm;
             _ = vm.ConnectAsync();

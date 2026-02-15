@@ -56,10 +56,16 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         public InstanceLocator Instance { get; }
         public string OperatingSystem { get; } // Linux/Windows
 
-        public InstanceNode(InstanceLocator instance, string os = "Linux") : base(instance.Name, "💻")
+        public InstanceNode(InstanceLocator instance, string os = "Linux") 
+            : base(instance.Name, GetIconForOs(os))
         {
             Instance = instance;
             OperatingSystem = os;
+        }
+
+        private static string GetIconForOs(string os)
+        {
+            return os.ToLowerInvariant() == "windows" ? "🪟" : "💻"; // Windows vs Laptop/Linux
         }
     }
 }

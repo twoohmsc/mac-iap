@@ -5,7 +5,8 @@
              xmlns:avaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="IapDesktop.Application.Avalonia.Controls.SimpleTerminalControl">
-    <Grid>
+    <Border BorderBrush="Red" BorderThickness="2">
+        <Grid>
         <avaloniaEdit:TextEditor Name="OutputEditor"
                                  FontFamily="Cascadia Code,Consolas,Monospace,Menlo"
                                  FontSize="12"
@@ -18,5 +19,6 @@
                                  VerticalScrollBarVisibility="Auto"/>
         
         <!-- Input Overlay/Line handling logic will be in code-behind for simplicity -->
-    </Grid>
+        </Grid>
+    </Border>
 </UserControl>

@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Models\" />
     <Folder Include="ViewModels\" />
     <Folder Include="Views\" />

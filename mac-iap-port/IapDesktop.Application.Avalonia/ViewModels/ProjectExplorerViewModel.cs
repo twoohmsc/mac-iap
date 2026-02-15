@@ -104,7 +104,11 @@ namespace IapDesktop.Application.Avalonia.ViewModels
                      {
                          // Determine OS icon if possible (or default)
                          var instanceLocator = new InstanceLocator(projectId, zoneId, instance.Name);
-                         var instanceNode = new InstanceNode(instanceLocator);
+                         
+                         var isWindows = instance.Disks.Any(d => d.Licenses?.Any(l => l.Contains("windows-server", System.StringComparison.OrdinalIgnoreCase)) ?? false);
+                         var os = isWindows ? "Windows" : "Linux";
+
+                         var instanceNode = new InstanceNode(instanceLocator, os);
                          zoneNode.Children.Add(instanceNode);
                      }
                  }

@@ -23,6 +23,7 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         private readonly IAuthorization authorization;
         private readonly Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore;
         private readonly IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService;
+        private readonly IFilePickerService filePickerService;
         
         private IapListener? listener;
         private SshConnection? connection;
@@ -52,13 +53,15 @@ namespace IapDesktop.Application.Avalonia.ViewModels
             IIapClient iapClient,
             IAuthorization authorization,
             Google.Solutions.Platform.Security.Cryptography.IKeyStore keyStore,
-            IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService)
+            IapDesktop.Application.Avalonia.Services.Ssh.ISshKeyService sshKeyService,
+            IapDesktop.Application.Avalonia.Services.IFilePickerService filePickerService)
         {
             this.instance = instance;
             this.iapClient = iapClient;
             this.authorization = authorization;
             this.keyStore = keyStore;
             this.sshKeyService = sshKeyService;
+            this.filePickerService = filePickerService;
             this.Title = $"SFTP: {instance.Name}";
             this.StatusText = "Initializing...";
             this.CurrentPath = "/";
@@ -87,15 +90,25 @@ namespace IapDesktop.Application.Avalonia.ViewModels
                 // 2. SSH Credential
                 var email = authorization.Session.Username;
                 var username = email.Split('@')[0].ToLowerInvariant();
-                var keyType = new Google.Solutions.Platform.Security.Cryptography.KeyType(
-                    System.Security.Cryptography.CngAlgorithm.Rsa, 3072);
-                var keyName = $"IAPDESKTOP_{username}_ssh";
                 
-                var credential = new KeychainSshCredential(
-                    username,
-                    keyStore,
-                    keyName,
-                    keyType);
+                IAsymmetricKeyCredential credential;
+                try
+                {
+                    var keyType = new Google.Solutions.Platform.Security.Cryptography.KeyType(
+                        System.Security.Cryptography.CngAlgorithm.Rsa, 3072);
+                    var keyName = $"IAPDESKTOP_{username}_ssh";
+                    
+                    credential = new KeychainSshCredential(
+                        username,
+                        keyStore,
+                        keyName,
+                        keyType);
+                }
+                catch (Exception ex)
+                {
+                    StatusText = $"Keychain failed: {ex.Message}. Using ephemeral key.";
+                    credential = new IapDesktop.Application.Avalonia.Services.Ssh.EphemeralSshCredential(username);
+                }
 
                 // 3. Authorize Key
                 StatusText = "Authorizing SSH key...";
@@ -231,7 +244,40 @@ namespace IapDesktop.Application.Avalonia.ViewModels
         [RelayCommand]
         public async Task Upload()
         {
-             StatusText = "Upload not implemented in this version (requires file picker).";
+             if (this.sftpChannel == null || this.connection == null) return;
+
+             try
+             {
+                 var files = await this.filePickerService.OpenFilesAsync(allowMultiple: true);
+                 if (files.Count == 0) return;
+
+                 foreach (var localPath in files)
+                 {
+                     var fileName = System.IO.Path.GetFileName(localPath);
+                     var remotePath = CurrentPath == "/" 
+                         ? $"/{fileName}" 
+                         : $"{CurrentPath}/{fileName}";
+                    
+                     StatusText = $"Uploading {fileName}...";
+
+                     using (var localStream = System.IO.File.OpenRead(localPath))
+                     using (var remoteStream = await this.sftpChannel.CreateFileAsync(
+                         remotePath,
+                         System.IO.FileMode.Create,
+                         System.IO.FileAccess.Write,
+                         FilePermissions.OwnerRead | FilePermissions.OwnerWrite))
+                     {
+                         await localStream.CopyToAsync(remoteStream);
+                     }
+                 }
+
+                 StatusText = "Upload completed.";
+                 await NavigateToAsync(CurrentPath);
+             }
+             catch (Exception ex)
+             {
+                 StatusText = $"Upload failed: {ex.Message}";
+             }
         }
 
         [RelayCommand]

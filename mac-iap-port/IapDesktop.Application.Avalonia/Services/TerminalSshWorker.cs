@@ -61,6 +61,8 @@ namespace IapDesktop.Application.Avalonia.Services
 
         protected override void OnConnected()
         {
+            // Trigger OnReadyToSend to ensure the channel gets opened immediately
+            NotifyReadyToSend(true);
             this.Connected?.Invoke(this, EventArgs.Empty);
         }
 
@@ -139,10 +141,23 @@ namespace IapDesktop.Application.Avalonia.Services
         {
             if (this.shellChannel == null)
             {
-                this.shellChannel = session.OpenShellChannel(
-                    LIBSSH2_CHANNEL_EXTENDED_DATA.MERGE,
-                    "xterm",
-                    80, 24);
+                // We are in non-blocking mode, but OpenShellChannel works best in blocking mode.
+                // Switch to blocking mode temporarily.
+                try 
+                {
+                    using (session.Session.AsBlocking())
+                    {
+                        this.shellChannel = session.OpenShellChannel(
+                            LIBSSH2_CHANNEL_EXTENDED_DATA.MERGE,
+                            "xterm",
+                            80, 24);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"DEBUG: TerminalSshWorker OpenShellChannel Failed: {ex}");
+                    throw;
+                }
             }
         }
 

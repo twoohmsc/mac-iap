@@ -13,7 +13,7 @@ namespace IapDesktop.Application.Avalonia.Services.Ssh
 {
     public interface ISshKeyService
     {
-        Task AuthorizeKeyAsync(
+        Task<string> AuthorizeKeyAsync(
             InstanceLocator instance,
             IAsymmetricKeySigner key,
             TimeSpan validity,
@@ -36,7 +36,7 @@ namespace IapDesktop.Application.Avalonia.Services.Ssh
             this.osLoginClient = osLoginClient;
         }
 
-        public async Task AuthorizeKeyAsync(
+        public async Task<string> AuthorizeKeyAsync(
             InstanceLocator instance,
             IAsymmetricKeySigner key,
             TimeSpan validity,
@@ -52,7 +52,7 @@ namespace IapDesktop.Application.Avalonia.Services.Ssh
             {
                 // OS Login Enforced
                 var osLoginProfile = new OsLoginProfile(this.osLoginClient);
-                await osLoginProfile.ImportSshPublicKeyAsync(
+                return await osLoginProfile.ImportSshPublicKeyAsync(
                     instance.Project,
                     this.authorization.Session.Username,
                     key,
@@ -74,6 +74,8 @@ namespace IapDesktop.Application.Avalonia.Services.Ssh
                         DateTime.UtcNow.Add(validity)));
 
                 await metadata.AddPublicKeyToMetadata(metadataKey, token).ConfigureAwait(false);
+                
+                return username;
             }
         }
 
